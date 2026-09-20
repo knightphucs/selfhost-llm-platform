@@ -1,0 +1,49 @@
+# ---- .NET ----
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+artifacts/
+TestResults/
+*.trx
+*.coverage
+*.nupkg
+
+# ---- Rider / VS Code ----
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# ---- Python (ml/) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+.ipynb_checkpoints/
+.ruff_cache/
+.pytest_cache/
+
+# ---- Model weights & datasets (không commit) ----
+*.gguf
+*.safetensors
+*.bin
+ml/data/
+ml/outputs/
+ml/checkpoints/
+
+# ---- Secrets & cấu hình local ----
+.env
+.env.local
+appsettings.Development.local.json
+appsettings.*.local.json
+deploy/.env
+secrets/
+
+# ---- macOS / Windows ----
+.DS_Store
+Thumbs.db
