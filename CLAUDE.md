@@ -63,13 +63,15 @@ Xem `docs/architecture.md` để có sơ đồ đầy đủ.
 | `Model` | Model logic | Họ, params, quantization, context length, capabilities (chat/embedding/vision), task tags |
 | `Provider` | Loại backend suy luận | vLLM / Ollama / TGI / llama.cpp / endpoint OpenAI-compatible ngoài; mỗi loại 1 adapter |
 | `Deployment` (ModelInstance) | Cầu nối Model × Provider tại 1 address | Nơi Address (base URL + auth) sống; health, tải, GPU/RAM |
-| `Route` / `RoutingPolicy` | Luật gateway chọn deployment | Theo task / tải / chất lượng-chi phí-độ trễ |
+| `VirtualModel` | Tên model ảo theo task mà client gọi | `code-fast`, `chat-general`, `embed` |
+| `Route` / `RoutingPolicy` | Luật gateway chọn deployment | Ánh xạ VirtualModel → Deployment, kèm `priority` để fallback |
 | `ApiKey` / `Consumer` | Chủ thể gọi API | Gắn quota |
 | `UsageRecord` | Bản ghi 1 request | prompt/completion tokens, model, thời điểm |
 | `Quota` | Giới hạn | token/phút (rate) + token/tháng (budget) |
 | `Tenant` | Đơn vị cô lập dữ liệu | Mọi bảng RAG và usage đều mang `tenant_id` |
-| `AuditLog` | Vết thao tác quản trị | Ai · làm gì · lên thực thể nào · khi nào |
-| `Collection` / `Document` / `Chunk` / `Embedding` | Dữ liệu RAG | Vector nằm ở pgvector |
+| `User` / `Role` | Chủ thể quản trị và phân quyền | RBAC trên control plane |
+| `AuditLog` | Vết thao tác quản trị | Ai · làm gì · lên thực thể nào · khi nào — append-only |
+| `Collection` / `Document` / `Chunk` | Dữ liệu RAG | Vector là cột `embedding` của `Chunk`, kiểu pgvector |
 | `Dataset` / `TrainingJob` / `ModelVersion` | Pipeline fine-tune | Pluggable, mức demo |
 
 **Quan hệ trục:** `Model` (1—n) `Deployment` (n—1) `Provider`. Một model chạy được nhiều nơi;
