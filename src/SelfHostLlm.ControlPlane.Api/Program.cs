@@ -1,5 +1,6 @@
 using System.Globalization;
 using SelfHostLlm.ControlPlane.Api.Hosting;
+using SelfHostLlm.Persistence;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -11,6 +12,7 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.AddObservability("controlplane-api");
+    builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
