@@ -1,4 +1,5 @@
 using SelfHostLlm.ControlPlane.IntegrationTests.Infrastructure;
+using SelfHostLlm.Domain.Deployments;
 using SelfHostLlm.Domain.Models;
 using SelfHostLlm.Persistence.Repositories;
 
@@ -58,5 +59,25 @@ public sealed class TenantRepositoryTests(PostgresFixture fixture)
         var get = () => repository.GetAsync(Guid.Empty, Guid.NewGuid(), CancellationToken.None);
 
         await get.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task ExistsAsync_PredicateOnConvertedAddress_TranslatesToSql()
+    {
+        var tenant = TestData.Tenant();
+        var model = TestData.ChatModel(tenant.Id);
+        var provider = TestData.Provider(tenant.Id);
+        var deployment = TestData.Deployment(tenant.Id, model.Id, provider.Id);
+        await using (var seed = fixture.CreateDbContext())
+        {
+            await TestData.SaveAsync(seed, tenant, model, provider, deployment);
+        }
+
+        await using var db = fixture.CreateDbContext();
+        var repository = new TenantRepository<Deployment>(db);
+        var sameAddress = Address.Create(deployment.Address + "/").Value;
+
+        (await repository.ExistsAsync(tenant.Id, d => d.ProviderId == provider.Id && d.Address == sameAddress, CancellationToken.None))
+            .Should().BeTrue();
     }
 }
