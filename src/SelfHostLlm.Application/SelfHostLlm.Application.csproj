@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="SelfHostLlm.Application.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SelfHostLlm.Domain\SelfHostLlm.Domain.csproj" />
+  </ItemGroup>
+</Project>

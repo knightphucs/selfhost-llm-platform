@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <InternalsVisibleTo Include="SelfHostLlm.ControlPlane.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
+    <ProjectReference Include="..\SelfHostLlm.Persistence\SelfHostLlm.Persistence.csproj" />
+    <ProjectReference Include="..\SelfHostLlm.Contracts\SelfHostLlm.Contracts.csproj" />
+  </ItemGroup>
+</Project>
