@@ -14,5 +14,6 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
   </ItemGroup>
 </Project>
