@@ -1,8 +1,10 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Application.Common.Behaviors;
 using SelfHostLlm.Application.Common.Messaging;
+using SelfHostLlm.Application.Metering;
 using SelfHostLlm.Application.Routing;
 using SelfHostLlm.Application.Security;
 
@@ -27,6 +29,10 @@ public static class DependencyInjection
         // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
         services.AddSingleton<ApiKeyHasher>();
         services.AddSingleton<FallbackExecutor>();
+
+        // Quota giữ bộ đếm in-memory nên bắt buộc singleton. Gateway thay baseline bằng bản đọc từ snapshot.
+        services.TryAddSingleton<IMonthlyUsageBaseline, NullMonthlyUsageBaseline>();
+        services.AddSingleton<IQuotaService, InMemoryQuotaService>();
 
         return services;
     }
