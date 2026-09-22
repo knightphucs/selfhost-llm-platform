@@ -27,7 +27,9 @@ internal sealed class ModelConfiguration : IEntityTypeConfiguration<Model>
         builder.HasEnumArrayCheck<Model, ModelCapability>("capabilities");
 
         builder.Ignore(m => m.TaskTags);
-        builder.Property<List<string>>("_taskTags").HasColumnName("task_tags");
+        builder.Property<List<string>>("_taskTags")
+            .HasColumnName("task_tags")
+            .Metadata.SetValueComparer(ValueConversions.ListComparer<string>());
 
         // Lệch ERD có chủ đích: tên model duy nhất trong phạm vi tenant, không phải toàn cục.
         builder.HasIndex(m => new { m.TenantId, m.Name }).IsUnique();

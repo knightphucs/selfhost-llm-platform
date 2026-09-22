@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SelfHostLlm.Persistence.Conversions;
 using SelfHostLlm.Persistence.Identity;
 
 namespace SelfHostLlm.Persistence.Configurations.Identity;
@@ -11,7 +12,9 @@ internal sealed class AppRoleConfiguration : IEntityTypeConfiguration<AppRole>
         builder.ToTable("role");
         builder.HasIndex(r => r.NormalizedName).HasDatabaseName("ix_role_normalized_name");
         builder.Ignore(r => r.Permissions);
-        builder.Property<List<string>>("_permissions").HasColumnName("permissions");
+        builder.Property<List<string>>("_permissions")
+            .HasColumnName("permissions")
+            .Metadata.SetValueComparer(ValueConversions.ListComparer<string>());
         builder.HasData(AppRoleSeed.Rows());
     }
 }
