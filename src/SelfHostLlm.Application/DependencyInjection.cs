@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SelfHostLlm.Application.Common.Behaviors;
 using SelfHostLlm.Application.Common.Messaging;
+using SelfHostLlm.Application.Security;
 
 namespace SelfHostLlm.Application;
 
@@ -21,6 +22,9 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
         AddRequestHandlers(services, assembly);
+
+        // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
+        services.AddSingleton<ApiKeyHasher>();
 
         return services;
     }
