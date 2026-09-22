@@ -1,0 +1,8 @@
+# Pipeline LoRA/QLoRA — tách hẳn khỏi solution .NET. Mức pluggable/demo (GĐ3).
+# Dependency (peft, transformers, ...) sẽ thêm khi bắt đầu GĐ3.
+[project]
+name = "selfhostllm-ml"
+version = "0.0.0"
+description = "Script fine-tune LoRA/QLoRA và eval cho Self-Host LLM Platform"
+requires-python = ">=3.11"
+dependencies = []
