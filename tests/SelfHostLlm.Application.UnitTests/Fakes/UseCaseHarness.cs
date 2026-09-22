@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using NSubstitute;
 using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Application.Common.Messaging;
 using SelfHostLlm.Domain.Audit;
@@ -28,6 +29,8 @@ internal sealed class UseCaseHarness
         services.AddSingleton<ITenantStore>(Tenants);
         services.AddSingleton<ISecretProtector, FakeSecretProtector>();
         services.AddSingleton(typeof(ITenantRepository<>), typeof(FakeTenantRepository<>));
+        services.AddSingleton(UsageQueries);
+        services.AddSingleton(AuditLogQueries);
         _provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
 
@@ -42,6 +45,10 @@ internal sealed class UseCaseHarness
     public FakeUnitOfWork UnitOfWork { get; } = new();
 
     public FakeTenantStore Tenants { get; } = new();
+
+    public IUsageQueries UsageQueries { get; } = Substitute.For<IUsageQueries>();
+
+    public IAuditLogQueries AuditLogQueries { get; } = Substitute.For<IAuditLogQueries>();
 
     public Guid TenantId => Actor.TenantId;
 
