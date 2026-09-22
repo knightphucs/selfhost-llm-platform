@@ -31,7 +31,7 @@ erDiagram
     MODEL {
         uuid id PK
         uuid tenant_id FK
-        string name UK
+        string name
         string family
         string param_size
         string quantization
@@ -43,6 +43,7 @@ erDiagram
 
     MODEL_VERSION {
         uuid id PK
+        uuid tenant_id FK
         uuid model_id FK
         string version_tag
         string adapter_uri
@@ -61,6 +62,7 @@ erDiagram
 
     DEPLOYMENT {
         uuid id PK
+        uuid tenant_id FK
         uuid model_id FK
         uuid model_version_id FK
         uuid provider_id FK
@@ -77,13 +79,14 @@ erDiagram
     VIRTUAL_MODEL {
         uuid id PK
         uuid tenant_id FK
-        string name UK
+        string name
         string task
         string description
     }
 
     ROUTE {
         uuid id PK
+        uuid tenant_id FK
         uuid virtual_model_id FK
         uuid deployment_id FK
         int priority
@@ -102,7 +105,13 @@ Ghi chú thiết kế:
   bỏ các deployment `Unhealthy` hoặc `enabled = false`.
 - `model_version_id` cho phép null — deployment của model gốc chưa fine-tune không có version.
 - `api_key_encrypted`: kể cả trong LAN vẫn không lưu plaintext, đây là điểm nhỏ nhưng hợp với
-  trục bảo mật của báo cáo.
+  trục bảo mật của báo cáo. Mã hoá bằng ASP.NET Core Data Protection; key ring lưu ở thư mục
+  file riêng (không nằm trong DB) — có bản dump DB vẫn không giải mã được.
+- `MODEL.name` và `VIRTUAL_MODEL.name` **duy nhất trong phạm vi tenant** — unique
+  `(tenant_id, name)`, không phải toàn cục. Gateway resolve virtual model theo
+  (tenant của ApiKey, name).
+- `MODEL_VERSION`, `DEPLOYMENT`, `ROUTE` mang `tenant_id` dù suy ra được qua FK — theo quy ước
+  mọi bảng có dữ liệu người dùng đều mang `tenant_id` (xem mục 6, *Composite FK theo tenant*).
 
 ---
 
@@ -126,6 +135,7 @@ erDiagram
 
     API_KEY {
         uuid id PK
+        uuid tenant_id FK
         uuid consumer_id FK
         string key_hash UK
         string key_prefix
@@ -136,6 +146,7 @@ erDiagram
 
     QUOTA {
         uuid id PK
+        uuid tenant_id FK
         uuid consumer_id FK
         int tokens_per_minute
         bigint tokens_per_month
@@ -176,6 +187,10 @@ Ghi chú thiết kế:
   thị trong UI cho người dùng nhận ra key nào là key nào.
 - `USAGE_RECORD.tokens_estimated` đánh dấu những bản ghi mà engine không trả `usage` và ta phải
   đếm bằng tokenizer. Báo cáo phải phân biệt được số đo thật và số ước lượng.
+- `USAGE_RECORD.deployment_id` **cho phép null**: khi mọi deployment trong chuỗi fallback đều
+  lỗi, request vẫn được ghi lại (ví dụ status 502) nhưng không có deployment nào phục vụ.
+- Ba giới hạn của `QUOTA` đều **cho phép null** — null nghĩa là không giới hạn chiều đó.
+  `QUOTA.consumer_id` unique (mỗi consumer tối đa một quota).
 - `used_fallback` là cột rẻ tiền nhưng cho ra một biểu đồ đẹp trong báo cáo: tần suất fallback
   theo thời gian.
 - `USAGE_AGGREGATE` do `Worker.Health` tổng hợp định kỳ. Enforce quota đọc bảng aggregate cộng
@@ -230,8 +245,17 @@ Ghi chú thiết kế:
 
 - Role gợi ý: `PlatformAdmin` (toàn quyền), `TenantAdmin` (quản lý trong tenant của mình),
   `Operator` (đăng ký/sửa deployment, không đụng RBAC), `Viewer` (chỉ đọc usage và audit).
-- `AUDIT_LOG` là **append-only**: không có endpoint sửa hay xoá. Ghi `before_value` /
-  `after_value` cho các thao tác cập nhật.
+- `AUDIT_LOG` là **append-only**: không có endpoint sửa hay xoá, và ở tầng DB có trigger
+  `trg_audit_log_append_only` / `trg_audit_log_no_truncate` chặn `UPDATE`, `DELETE`,
+  `TRUNCATE`. Ghi `before_value` / `after_value` (jsonb) cho các thao tác cập nhật.
+- `AUDIT_LOG.actor_user_id` **cho phép null** (thao tác của hệ thống: seed, job nền) và là FK
+  đơn tới `APP_USER` — PlatformAdmin thao tác xuyên tenant nên actor không nhất thiết cùng
+  tenant với bản ghi.
+- `APP_USER` / `ROLE` / `USER_ROLE` được hiện thực bằng **ASP.NET Core Identity** (bảng đổi tên
+  về tên trong sơ đồ). Identity bổ sung các cột riêng (`normalized_user_name`,
+  `normalized_email`, `security_stamp`, `concurrency_stamp`, `lockout_*`, ...) và các bảng phụ
+  `user_claim`, `user_login`, `user_token`, `role_claim`. `ROLE.permissions` là `text[]`; bốn
+  role hệ thống được seed trong migration đầu tiên.
 - Ghi audit cho mọi thao tác quản trị (tạo/sửa/xoá deployment, cấp và thu hồi ApiKey, đổi
   quota, đổi role). Request suy luận thông thường đi vào `USAGE_RECORD`, không làm phồng audit.
 
@@ -285,8 +309,11 @@ Ghi chú thiết kế — đây là phần nhạy cảm nhất về bảo mật:
   Cố ý phi chuẩn hoá để mọi truy vấn vector lọc được tenant trực tiếp trong `WHERE`, không phải
   join rồi mới lọc.
 - Index cần có:
-  - `CREATE INDEX ON chunks (tenant_id, collection_id);`
-  - Index vector (HNSW) trên `chunks(embedding)` — pgvector.
+  - `CREATE INDEX ON chunk (tenant_id, collection_id);`
+  - Index vector HNSW trên `chunk(embedding)` với opclass `vector_cosine_ops`. Truy vấn phải
+    dùng toán tử cosine `<=>` (không phải `<->`) thì mới dùng được index này.
+  - `embedding` có kiểu cố định `vector(1024)` (bge-m3); `COLLECTION.embedding_dim` bị check
+    constraint ép bằng 1024.
   - Cân nhắc **partial index theo tenant** nếu số tenant ít và dữ liệu lớn.
 - `embedding_dim` gắn ở `COLLECTION`: đổi embedding model là phải re-ingest cả collection, vì
   vector khác chiều và khác không gian. Ràng buộc này phải chặn ở tầng API.
@@ -348,3 +375,7 @@ Ghi chú thiết kế:
 | Xoá | Soft delete (`enabled` / `revoked_at`) cho ApiKey và Deployment — xoá cứng làm mất tính toàn vẹn của usage lịch sử |
 | Đặt tên | Bảng và cột `snake_case` trong Postgres, entity `PascalCase` trong C# — map qua naming convention của EF Core |
 | Index thời gian | `USAGE_RECORD (tenant_id, occurred_at)` và `AUDIT_LOG (tenant_id, occurred_at)` cho truy vấn báo cáo |
+| Tên bảng | Số ít, trùng tên thực thể trong sơ đồ (`model`, `deployment`, `api_key`, `chunk`...) |
+| Composite FK theo tenant | Mọi FK giữa hai bảng có `tenant_id` là FK tổng hợp `(tenant_id, x_id) → parent(tenant_id, id)` (bảng cha có alternate key `(tenant_id, id)`). DB từ chối tham chiếu chéo tenant kể cả khi code tầng trên có bug |
+| Enum | Lưu dạng string, kèm check constraint liệt kê giá trị hợp lệ |
+| Id tự sinh | `USAGE_RECORD`, `AUDIT_LOG`, `USAGE_AGGREGATE` dùng `bigint GENERATED ALWAYS AS IDENTITY` |
