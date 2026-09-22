@@ -1,5 +1,31 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Globalization;
+using SelfHostLlm.Worker.Health.Hosting;
+using Serilog;
 
-var app = builder.Build();
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+    .CreateBootstrapLogger();
 
-app.Run();
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.AddObservability("worker-health");
+    // TODO(GĐ1): đăng ký BackgroundService probe health deployment + aggregate usage.
+    // Host dùng Microsoft.NET.Sdk.Web chỉ để expose /health/live và /health/ready.
+
+    var app = builder.Build();
+
+    app.UseSerilogRequestLogging();
+    app.MapHealthEndpoints();
+
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Host worker-health dừng bất thường");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

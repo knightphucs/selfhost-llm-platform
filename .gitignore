@@ -47,3 +47,6 @@ secrets/
 # ---- macOS / Windows ----
 .DS_Store
 Thumbs.db
+
+# ---- Log file của host ----
+logs/
