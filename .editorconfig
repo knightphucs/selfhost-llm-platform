@@ -57,3 +57,7 @@ dotnet_diagnostic.CA1000.severity = none
 # CA1707: cho phép dấu _ trong tên test (MethodName_Scenario_ExpectedResult)
 [tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
+
+# Code migration do EF Core sinh — analyzer bỏ qua, code tay vẫn chịu TreatWarningsAsErrors.
+[src/SelfHostLlm.Persistence/Migrations/**.cs]
+generated_code = true
