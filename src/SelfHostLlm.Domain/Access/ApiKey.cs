@@ -34,6 +34,8 @@ public sealed class ApiKey : Entity<Guid>, ITenantScoped
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
+    public bool IsRevoked => RevokedAt is not null;
+
     public static Result<ApiKey> Create(
         Guid tenantId,
         Guid consumerId,
@@ -45,7 +47,7 @@ public sealed class ApiKey : Entity<Guid>, ITenantScoped
         var error = Guard.First(
             Guard.NotEmpty(tenantId, "api_key.tenant_id"),
             Guard.NotEmpty(consumerId, "api_key.consumer_id"),
-            IsLowerHex(keyHash, KeyHashLength)
+            Hex.IsLowerHex(keyHash, KeyHashLength)
                 ? null
                 : Error.Validation("api_key.key_hash.invalid", "key_hash phải là SHA-256 hex (64 ký tự thường)."),
             Guard.NotBlank(keyPrefix, "api_key.key_prefix", MaxKeyPrefixLength),
@@ -68,8 +70,6 @@ public sealed class ApiKey : Entity<Guid>, ITenantScoped
         };
     }
 
-    public bool IsRevoked => RevokedAt is not null;
-
     /// <summary>Key dùng được tại thời điểm <paramref name="now"/>: chưa thu hồi và chưa hết hạn.</summary>
     public bool IsActiveAt(DateTimeOffset now) => !IsRevoked && (ExpiresAt is null || ExpiresAt > now);
 
@@ -85,7 +85,4 @@ public sealed class ApiKey : Entity<Guid>, ITenantScoped
     }
 
     public void MarkUsed(DateTimeOffset now) => LastUsedAt = now.ToUniversalTime();
-
-    private static bool IsLowerHex(string? value, int length) =>
-        value is not null && value.Length == length && value.All(c => c is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
 }
