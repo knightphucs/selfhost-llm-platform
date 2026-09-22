@@ -54,10 +54,14 @@ internal static class EntityTypeBuilderExtensions
         where T : class, ITenantScoped
     {
         builder.Property(TenantIdProperty).HasColumnName("tenant_id");
-        builder.HasOne<Tenant>().WithMany().HasForeignKey(TenantIdProperty).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(TenantIdProperty)
+            .HasConstraintName($"fk_{TableName(builder)}_tenant")
+            .OnDelete(DeleteBehavior.Restrict);
         if (isPrincipal)
         {
-            builder.HasAlternateKey(TenantIdProperty, "Id");
+            builder.HasAlternateKey(TenantIdProperty, "Id").HasName($"ak_{TableName(builder)}_tenant_id_id");
         }
 
         return builder;
@@ -78,6 +82,7 @@ internal static class EntityTypeBuilderExtensions
             .WithMany()
             .HasForeignKey(TenantIdProperty, foreignKeyProperty)
             .HasPrincipalKey(TenantIdProperty, "Id")
+            .HasConstraintName($"fk_{TableName(builder)}_{ToSnakeCase(foreignKeyProperty)}")
             .OnDelete(onDelete);
         return builder;
     }
@@ -89,6 +94,34 @@ internal static class EntityTypeBuilderExtensions
         var values = string.Join(", ", Enum.GetNames<TEnum>().Select(n => $"'{n}'"));
         builder.ToTable(t => t.HasCheckConstraint($"ck_{TableName(builder)}_{column}", $"{column} IN ({values})"));
         return builder;
+    }
+
+    /// <summary>
+    /// Chuyển PascalCase → snake_case (<c>EmbeddingModelId</c> → <c>embedding_model_id</c>),
+    /// khớp cách EFCore.NamingConventions đặt tên cột.
+    /// </summary>
+    internal static string ToSnakeCase(string name)
+    {
+        var builder = new System.Text.StringBuilder(name.Length + 8);
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (char.IsUpper(c))
+            {
+                if (i > 0 && (char.IsLower(name[i - 1]) || char.IsDigit(name[i - 1])))
+                {
+                    builder.Append('_');
+                }
+
+                builder.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                builder.Append(c);
+            }
+        }
+
+        return builder.ToString();
     }
 
     private static string TableName<T>(EntityTypeBuilder<T> builder)

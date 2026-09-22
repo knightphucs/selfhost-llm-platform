@@ -23,6 +23,6 @@ internal static class AppRoleSeed
             Name = name,
             NormalizedName = name.ToUpperInvariant(),
             ConcurrencyStamp = RoleIds[name].ToString(),
-            Permissions = RolePermissions.Default[name].Order(StringComparer.Ordinal).ToList(),
+            _permissions = RolePermissions.Default[name].Order(StringComparer.Ordinal).ToList(),
         });
 }
