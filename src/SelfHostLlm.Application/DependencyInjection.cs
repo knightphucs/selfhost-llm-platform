@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SelfHostLlm.Application.Abstractions;
+using SelfHostLlm.Application.Auditing;
 using SelfHostLlm.Application.Common.Behaviors;
 using SelfHostLlm.Application.Common.Messaging;
 using SelfHostLlm.Application.Metering;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         AddRequestHandlers(services, assembly);
 
         // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
+        services.AddScoped<IAuditTrail, AuditTrail>();
         services.AddSingleton<ApiKeyHasher>();
         services.AddSingleton<FallbackExecutor>();
 
