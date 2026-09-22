@@ -177,7 +177,7 @@ Chi tiết cây thư mục con: `docs/solution-layout.md`.
   không `.Result` / `.Wait()`.
 - Không dùng exception cho luồng nghiệp vụ dự đoán được → dùng `Result<T>` trong
   `Domain/Common/`. `ErrorKind`: NotFound, Validation, Conflict, Unauthorized, Forbidden,
-  Unavailable.
+  Unavailable, RateLimited (→ 429, vượt quota).
 
 **API**
 
@@ -244,7 +244,8 @@ Chi tiết cây thư mục con: `docs/solution-layout.md`.
   `chat-general`, `embed`) → gateway map sang deployment thật.
 - **Implicit (nâng cao):** classifier nhẹ đọc prompt để tự chọn task.
 - **Fallback:** `RouteResolver` trả về một **danh sách có thứ tự**, không phải một deployment.
-  Chỉ fallback khi **lỗi kết nối / timeout / 5xx**. Lỗi 4xx do client thì trả thẳng về.
+  Chỉ fallback khi **lỗi kết nối / timeout / 5xx**, cộng thêm **408 và 429** từ upstream (engine
+  bận, không phải lỗi của client). Các lỗi 4xx còn lại do client thì trả thẳng về.
 - Phân loại: general chat, coding, embedding (bắt buộc cho RAG), tuỳ chọn
   summarization/classification rẻ cho khối lượng lớn.
 
