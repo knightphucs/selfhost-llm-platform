@@ -3,7 +3,7 @@ using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Domain.Common;
 using SelfHostLlm.Domain.Rag;
 
-namespace SelfHostLlm.Persistence.Vector;
+namespace SelfHostLlm.Persistence.VectorStore;
 
 /// <summary>
 /// <see cref="IVectorStore"/> trên pgvector. Truy vấn viết bằng SQL tường minh (có tham số) để

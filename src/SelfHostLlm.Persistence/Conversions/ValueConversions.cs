@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using PgVector = Pgvector.Vector;
+using Pgvector;
 using SelfHostLlm.Domain.Deployments;
 
 namespace SelfHostLlm.Persistence.Conversions;
@@ -13,8 +13,8 @@ internal static class ValueConversions
         new(a => a.ToString(), s => Address.Create(s).Value);
 
     /// <summary><c>ReadOnlyMemory&lt;float&gt;</c> ↔ <c>vector(n)</c> của pgvector.</summary>
-    public static readonly ValueConverter<ReadOnlyMemory<float>, PgVector> MemoryToVector =
-        new(m => new PgVector(m), v => v.Memory);
+    public static readonly ValueConverter<ReadOnlyMemory<float>, Vector> MemoryToVector =
+        new(m => new Vector(m), v => v.Memory);
 
     public static readonly ValueComparer<ReadOnlyMemory<float>> MemoryComparer =
         new(

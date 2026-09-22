@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using SelfHostLlm.Application.Abstractions;
-using SelfHostLlm.Persistence.Vector;
+using SelfHostLlm.Persistence.VectorStore;
 
 namespace SelfHostLlm.Persistence;
 
