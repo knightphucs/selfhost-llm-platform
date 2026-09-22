@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SelfHostLlm.Application.Common.Behaviors;
 using SelfHostLlm.Application.Common.Messaging;
+using SelfHostLlm.Application.Routing;
 using SelfHostLlm.Application.Security;
 
 namespace SelfHostLlm.Application;
@@ -25,6 +26,7 @@ public static class DependencyInjection
 
         // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
         services.AddSingleton<ApiKeyHasher>();
+        services.AddSingleton<FallbackExecutor>();
 
         return services;
     }
