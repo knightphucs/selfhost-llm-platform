@@ -20,7 +20,8 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IDispatcher, Dispatcher>();
 
-        // Thứ tự đăng ký = thứ tự chạy (ngoài vào trong).
+        // Thứ tự đăng ký = thứ tự chạy (ngoài vào trong): chặn truy cập chéo tenant trước, rồi mới validate.
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TenantAccessBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         services.AddValidatorsFromAssembly(assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
