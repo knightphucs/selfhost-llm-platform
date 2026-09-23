@@ -1,4 +1,5 @@
 using System.Globalization;
+using SelfHostLlm.Adapters.Inference;
 using SelfHostLlm.Application;
 using SelfHostLlm.ControlPlane.Api.Auth;
 using SelfHostLlm.ControlPlane.Api.Endpoints;
@@ -21,6 +22,7 @@ try
     builder.Services.AddApplication();
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddSecretProtection(builder.Configuration);
+    builder.Services.AddInferenceAdapters();
     builder.Services.AddPlatformAuth();
     builder.Services.AddHostedService<AdminBootstrapper>();
 

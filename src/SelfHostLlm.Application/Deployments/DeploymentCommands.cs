@@ -86,8 +86,10 @@ internal sealed class CreateDeploymentHandler(
     ITenantRepository<ModelVersion> modelVersions,
     ITenantRepository<Provider> providers,
     ISecretProtector secrets,
+    IInferenceProviderFactory inference,
     IAuditTrail audit,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateDeploymentCommand, Result<Deployment>>
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider) : IRequestHandler<CreateDeploymentCommand, Result<Deployment>>
 {
     public async Task<Result<Deployment>> HandleAsync(CreateDeploymentCommand request, CancellationToken cancellationToken)
     {
@@ -97,7 +99,7 @@ internal sealed class CreateDeploymentHandler(
             return UseCaseExtensions.NotFound<Model>(request.ModelId);
         }
 
-        if (!await providers.ExistsAsync(request.TenantId, p => p.Id == request.ProviderId, cancellationToken))
+        if (await providers.GetAsync(request.TenantId, request.ProviderId, cancellationToken) is not { } provider)
         {
             return UseCaseExtensions.NotFound<Provider>(request.ProviderId);
         }
@@ -132,6 +134,14 @@ internal sealed class CreateDeploymentHandler(
         }
 
         var deployment = created.Value;
+
+        // sequences §3: probe thử ngay khi đăng ký. Probe lỗi KHÔNG chặn việc tạo — engine có thể
+        // chưa bật; Worker.Health (GĐ1) sẽ probe lại định kỳ.
+        var probe = await inference.For(provider.Kind).ProbeAsync(
+            new InferenceEndpoint(address.Value.BaseUrl, string.IsNullOrEmpty(request.ApiKey) ? null : request.ApiKey),
+            cancellationToken);
+        HealthPolicy.Apply(deployment, probe, timeProvider.GetUtcNow());
+
         deployments.Add(deployment);
         audit.Record(request.TenantId, AuditAction.Create, nameof(Deployment), deployment.Id.ToString(), null, AuditSnapshot.Of(deployment));
         return await unitOfWork.SaveAndReturnAsync(deployment, cancellationToken);
@@ -221,5 +231,35 @@ internal sealed class SetDeploymentEnabledHandler(ITenantRepository<Deployment> 
             before,
             AuditSnapshot.Of(deployment));
         return await unitOfWork.SaveAndReturnAsync(deployment, cancellationToken);
+    }
+}
+
+/// <summary>Probe thủ công một deployment và cập nhật health (không ghi audit — đây là trạng thái vận hành, không phải thay đổi cấu hình).</summary>
+public sealed record ProbeDeploymentCommand(Guid TenantId, Guid DeploymentId) : IRequest<Result<DeploymentProbe>>, ITenantRequest;
+
+public sealed record DeploymentProbe(Deployment Deployment, ProbeResult Probe);
+
+internal sealed class ProbeDeploymentHandler(
+    ITenantRepository<Deployment> deployments,
+    ITenantRepository<Provider> providers,
+    ISecretProtector secrets,
+    IInferenceProviderFactory inference,
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider) : IRequestHandler<ProbeDeploymentCommand, Result<DeploymentProbe>>
+{
+    public async Task<Result<DeploymentProbe>> HandleAsync(ProbeDeploymentCommand request, CancellationToken cancellationToken)
+    {
+        if (await deployments.GetAsync(request.TenantId, request.DeploymentId, cancellationToken) is not { } deployment)
+        {
+            return UseCaseExtensions.NotFound<Deployment>(request.DeploymentId);
+        }
+
+        var kind = (await providers.GetAsync(request.TenantId, deployment.ProviderId, cancellationToken))?.Kind ?? ProviderKind.OpenAiCompatible;
+        var apiKey = deployment.ApiKeyEncrypted is { } cipher ? secrets.Unprotect(cipher) : null;
+
+        var probe = await inference.For(kind).ProbeAsync(new InferenceEndpoint(deployment.Address.BaseUrl, apiKey), cancellationToken);
+        HealthPolicy.Apply(deployment, probe, timeProvider.GetUtcNow());
+
+        return await unitOfWork.SaveAndReturnAsync(new DeploymentProbe(deployment, probe), cancellationToken);
     }
 }

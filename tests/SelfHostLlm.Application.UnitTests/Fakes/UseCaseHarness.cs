@@ -30,6 +30,7 @@ internal sealed class UseCaseHarness
         services.AddSingleton<ISecretProtector, FakeSecretProtector>();
         services.AddSingleton(typeof(ITenantRepository<>), typeof(FakeTenantRepository<>));
         services.AddSingleton<IUserDirectory>(Users);
+        services.AddSingleton<IInferenceProviderFactory>(Inference);
         services.AddSingleton(UsageQueries);
         services.AddSingleton(AuditLogQueries);
         _provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
@@ -48,6 +49,8 @@ internal sealed class UseCaseHarness
     public FakeTenantStore Tenants { get; } = new();
 
     public FakeUserDirectory Users { get; } = new();
+
+    public FakeInferenceProviderFactory Inference { get; } = new();
 
     public IUsageQueries UsageQueries { get; } = Substitute.For<IUsageQueries>();
 

@@ -92,6 +92,11 @@ internal static class CatalogEndpoints
                 (await d.SendAsync(new SetDeploymentApiKeyCommand(tenantId, deploymentId, b.ApiKey), ct)).ToOk(x => x.ToResponse()))
             .RequireAuthorization(Permissions.DeploymentsWrite);
 
+        group.MapPost("/{deploymentId:guid}/probe", async (Guid tenantId, Guid deploymentId, IDispatcher d, CancellationToken ct) =>
+                (await d.SendAsync(new ProbeDeploymentCommand(tenantId, deploymentId), ct))
+                .ToOk(p => new DeploymentProbeResponse(p.Probe.Healthy, p.Probe.LatencyMs, p.Probe.StatusCode, p.Probe.Error, p.Deployment.ToResponse())))
+            .RequireAuthorization(Permissions.DeploymentsWrite);
+
         group.MapPost("/{deploymentId:guid}/enable", async (Guid tenantId, Guid deploymentId, IDispatcher d, CancellationToken ct) =>
                 (await d.SendAsync(new SetDeploymentEnabledCommand(tenantId, deploymentId, true), ct)).ToOk(x => x.ToResponse()))
             .RequireAuthorization(Permissions.DeploymentsWrite);

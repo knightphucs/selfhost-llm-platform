@@ -40,7 +40,7 @@ public sealed class ConfigurationFlowApiTests(PostgresFixture fixture)
         var provider = await ReadAsync<ProviderResponse>(await client.PostAsJsonAsync($"{baseUrl}/providers",
             new CreateProviderRequest("Ollama PC", "Ollama", null)));
         var deployment = await ReadAsync<DeploymentResponse>(await client.PostAsJsonAsync($"{baseUrl}/deployments",
-            new CreateDeploymentRequest(model.Id, null, provider.Id, "http://192.168.1.50:11434", "qwen2.5:7b-instruct-q4_K_M", EngineKey)));
+            new CreateDeploymentRequest(model.Id, null, provider.Id, "http://127.0.0.1:1", "qwen2.5:7b-instruct-q4_K_M", EngineKey)));
         var virtualModel = await ReadAsync<VirtualModelResponse>(await client.PostAsJsonAsync($"{baseUrl}/virtual-models",
             new CreateVirtualModelRequest("code-fast", "Coding", null)));
         await ReadAsync<RouteResponse>(await client.PostAsJsonAsync($"{baseUrl}/virtual-models/{virtualModel.Id}/routes",

@@ -36,8 +36,45 @@ public sealed class DeploymentUseCaseTests
 
         deployment.ApiKeyEncrypted.Should().NotBeNull().And.NotBe(EngineKey).And.StartWith("ENC:");
         new FakeSecretProtector().Unprotect(deployment.ApiKeyEncrypted!).Should().Be(EngineKey);
-        deployment.HealthStatus.Should().Be(HealthStatus.Unknown);
         deployment.Address.ToString().Should().Be("http://192.168.1.50:11434");
+    }
+
+    [Fact]
+    public async Task CreateDeployment_ProbeSucceeds_MarksHealthyWithLatencyAndUsesPlaintextKey()
+    {
+        _h.Inference.NextProbe = new(true, 87, 200, null);
+
+        var deployment = (await _h.SendAsync(Create(EngineKey))).Value;
+
+        deployment.HealthStatus.Should().Be(HealthStatus.Healthy);
+        deployment.LatencyMsP50.Should().Be(87);
+        _h.Inference.Probed.Should().ContainSingle().Which.ApiKey.Should().Be(EngineKey);
+    }
+
+    [Fact]
+    public async Task CreateDeployment_ProbeFails_StillCreatesWithFailureRecorded()
+    {
+        _h.Inference.NextProbe = new(false, 5000, null, "HttpRequestException");
+
+        var result = await _h.SendAsync(Create());
+
+        result.IsSuccess.Should().BeTrue("engine chưa bật không được chặn việc đăng ký deployment");
+        result.Value.HealthStatus.Should().Be(HealthStatus.Unknown);
+        result.Value.ConsecutiveFailures.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ProbeDeployment_DecryptsStoredKeyAndUpdatesHealth()
+    {
+        var deployment = (await _h.SendAsync(Create(EngineKey))).Value;
+        _h.Inference.Probed.Clear();
+        _h.Inference.NextProbe = new(true, 12, 200, null);
+
+        var result = await _h.SendAsync(new ProbeDeploymentCommand(_h.TenantId, deployment.Id));
+
+        result.Value.Probe.Healthy.Should().BeTrue();
+        _h.Inference.Probed.Should().ContainSingle().Which.ApiKey.Should().Be(EngineKey);
+        deployment.LatencyMsP50.Should().Be(12);
     }
 
     [Fact]
