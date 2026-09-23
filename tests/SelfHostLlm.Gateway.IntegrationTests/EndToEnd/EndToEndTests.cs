@@ -39,6 +39,13 @@ public sealed class EndToEndTests(PostgresDatabase database) : IAsyncLifetime
         _controlPlane = new WebApplicationFactory<ControlPlaneProgram>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+
+            // Validate DI như môi trường Development — bắt lỗi đăng ký thiếu ngay lúc build host.
+            builder.UseDefaultServiceProvider(o =>
+            {
+                o.ValidateOnBuild = true;
+                o.ValidateScopes = true;
+            });
             builder.UseSetting("ConnectionStrings:Postgres", database.ConnectionString);
             builder.UseSetting("InternalApi:Token", InternalToken);
             builder.UseSetting("DataProtection:KeysPath", _keysPath);

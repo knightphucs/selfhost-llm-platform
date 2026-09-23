@@ -19,10 +19,10 @@ try
 
     builder.AddObservability("gateway");
 
-    // Thứ tự quan trọng: AddGateway đăng ký baseline quota từ snapshot trước khi AddApplication
-    // đăng ký bản mặc định (TryAdd).
+    // Thứ tự quan trọng: AddGateway đăng ký baseline quota từ snapshot trước khi AddApplicationCore
+    // đăng ký bản mặc định (TryAdd). Gateway chỉ cần phần lõi — không có use case quản trị.
     builder.Services.AddGateway();
-    builder.Services.AddApplication();
+    builder.Services.AddApplicationCore();
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddSecretProtection(builder.Configuration);
     builder.Services.AddInferenceAdapters();

@@ -13,7 +13,7 @@ namespace SelfHostLlm.Gateway;
 
 internal static class GatewaySetup
 {
-    /// <summary>Đăng ký phần tự xây của Gateway. Gọi TRƯỚC AddApplication để baseline quota lấy từ snapshot.</summary>
+    /// <summary>Đăng ký phần tự xây của Gateway. Gọi TRƯỚC AddApplicationCore để baseline quota lấy từ snapshot.</summary>
     public static IServiceCollection AddGateway(this IServiceCollection services)
     {
         services.AddSingleton<GatewayStateStore>();

@@ -41,6 +41,13 @@ public sealed class ControlPlaneApp : IAsyncDisposable
         {
             // UseSetting được áp trước khi Program đọc cấu hình (khác ConfigureAppConfiguration).
             builder.UseEnvironment("Testing");
+
+            // Validate DI như môi trường Development — bắt lỗi đăng ký thiếu ngay lúc build host.
+            builder.UseDefaultServiceProvider(o =>
+            {
+                o.ValidateOnBuild = true;
+                o.ValidateScopes = true;
+            });
             builder.UseSetting("ConnectionStrings:Postgres", connectionString);
             builder.UseSetting("InternalApi:Token", InternalToken);
             builder.UseSetting("DataProtection:KeysPath", keysPath);

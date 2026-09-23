@@ -46,6 +46,13 @@ public sealed class GatewayApp : IAsyncDisposable
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+
+            // Validate DI như môi trường Development — bắt lỗi đăng ký thiếu ngay lúc build host.
+            builder.UseDefaultServiceProvider(o =>
+            {
+                o.ValidateOnBuild = true;
+                o.ValidateScopes = true;
+            });
             builder.UseSetting("ConnectionStrings:Postgres", connectionString ?? "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none");
             builder.UseSetting("DataProtection:KeysPath", keysPath ?? Path.Combine(workDir, "keys"));
             builder.UseSetting("Gateway:SnapshotCachePath", Path.Combine(workDir, "snapshot.json"));

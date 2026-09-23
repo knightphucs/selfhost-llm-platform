@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Persistence.Configuration;
-using SelfHostLlm.Persistence.Identity;
 using SelfHostLlm.Persistence.Repositories;
 using SelfHostLlm.Persistence.Security;
 using SelfHostLlm.Persistence.VectorStore;
@@ -37,9 +36,6 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IVectorStore, PgVectorStore>();
         services.AddScoped<IConfigSnapshotSource, ConfigSnapshotSource>();
-
-        // Cần UserManager — chỉ resolve được ở host đã đăng ký Identity (ControlPlane).
-        services.AddScoped<IUserDirectory, UserDirectory>();
 
         return services;
     }
