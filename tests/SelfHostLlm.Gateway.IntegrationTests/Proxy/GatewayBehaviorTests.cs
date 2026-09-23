@@ -43,6 +43,17 @@ public sealed class GatewayBehaviorTests : IAsyncLifetime
         new { model, stream, messages = new[] { new { role = "user", content = "Giải thích tenant isolation trong RAG" } } };
 
     [Fact]
+    public async Task Chat_DeploymentWithoutEngineKey_NeverForwardsClientApiKey()
+    {
+        var snapshot = await ApplyChatSnapshotAsync();
+
+        (await Client(snapshot.ApiKey).PostAsJsonAsync("/v1/chat/completions", Chat())).EnsureSuccessStatusCode();
+
+        var forwarded = _engine.Requests.Should().ContainSingle().Subject;
+        forwarded.Authorization.Should().BeNull("API key của client (sk-…) không bao giờ được forward tới engine");
+    }
+
+    [Fact]
     public async Task Stream_WithUsage_RelaysSseAndReadsUsageFromFinalChunk()
     {
         _engine.Behavior = EngineBehavior.SseWithUsage;
