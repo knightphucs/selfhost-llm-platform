@@ -14,6 +14,7 @@ internal sealed class ConfigSnapshotSource(AppDbContext db) : IConfigSnapshotSou
         var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
         var models = await db.Models.AsNoTracking().OrderBy(m => m.Id).ToListAsync(cancellationToken);
+        var providers = await db.Providers.AsNoTracking().OrderBy(p => p.Id).ToListAsync(cancellationToken);
         var deployments = await db.Deployments.AsNoTracking().OrderBy(d => d.Id).ToListAsync(cancellationToken);
         var virtualModels = await db.VirtualModels.AsNoTracking().OrderBy(v => v.Id).ToListAsync(cancellationToken);
         var routes = await db.Routes.AsNoTracking().OrderBy(r => r.Id).ToListAsync(cancellationToken);
@@ -35,6 +36,6 @@ internal sealed class ConfigSnapshotSource(AppDbContext db) : IConfigSnapshotSou
                 select new ConsumerMonthlyUsage(g.Key, g.Sum(u => (long)u.PromptTokens + u.CompletionTokens)))
             .ToListAsync(cancellationToken);
 
-        return new ConfigSnapshotData(now, models, deployments, virtualModels, routes, apiKeys, quotas, monthlyUsage);
+        return new ConfigSnapshotData(now, models, providers, deployments, virtualModels, routes, apiKeys, quotas, monthlyUsage);
     }
 }

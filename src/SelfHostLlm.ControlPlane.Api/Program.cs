@@ -1,4 +1,7 @@
 using System.Globalization;
+using SelfHostLlm.Application;
+using SelfHostLlm.ControlPlane.Api.Auth;
+using SelfHostLlm.ControlPlane.Api.Endpoints;
 using SelfHostLlm.ControlPlane.Api.Hosting;
 using SelfHostLlm.Persistence;
 using Serilog;
@@ -12,15 +15,24 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.AddObservability("controlplane-api");
-    builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    builder.Services.AddApplication();
+    builder.Services.AddPersistence(builder.Configuration);
+    builder.Services.AddSecretProtection(builder.Configuration);
+    builder.Services.AddPlatformAuth();
+    builder.Services.AddHostedService<AdminBootstrapper>();
 
     var app = builder.Build();
 
     app.UseExceptionHandler();
     app.UseSerilogRequestLogging();
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     app.MapHealthEndpoints();
+    app.MapControlPlaneApi();
 
     app.Run();
 }

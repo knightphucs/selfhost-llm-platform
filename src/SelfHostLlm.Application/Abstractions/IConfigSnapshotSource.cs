@@ -1,6 +1,7 @@
 using SelfHostLlm.Domain.Access;
 using SelfHostLlm.Domain.Deployments;
 using SelfHostLlm.Domain.Models;
+using SelfHostLlm.Domain.Providers;
 using SelfHostLlm.Domain.Routing;
 
 namespace SelfHostLlm.Application.Abstractions;
@@ -16,6 +17,7 @@ public interface IConfigSnapshotSource
 public sealed record ConfigSnapshotData(
     DateTimeOffset GeneratedAt,
     IReadOnlyList<Model> Models,
+    IReadOnlyList<Provider> Providers,
     IReadOnlyList<Deployment> Deployments,
     IReadOnlyList<VirtualModel> VirtualModels,
     IReadOnlyList<Route> Routes,
