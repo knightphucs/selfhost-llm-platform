@@ -1,5 +1,9 @@
 using System.Globalization;
+using SelfHostLlm.Adapters.Inference;
+using SelfHostLlm.Application;
+using SelfHostLlm.Gateway;
 using SelfHostLlm.Gateway.Hosting;
+using SelfHostLlm.Persistence;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -11,12 +15,24 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.AddObservability("gateway");
-    // TODO(GĐ0 · Gateway): exception handler trả lỗi theo format OpenAI { error: { message, type, code } }.
+
+    // Thứ tự quan trọng: AddGateway đăng ký baseline quota từ snapshot trước khi AddApplication
+    // đăng ký bản mặc định (TryAdd).
+    builder.Services.AddGateway();
+    builder.Services.AddApplication();
+    builder.Services.AddPersistence(builder.Configuration);
+    builder.Services.AddSecretProtection(builder.Configuration);
+    builder.Services.AddInferenceAdapters();
 
     var app = builder.Build();
 
+    app.UseExceptionHandler();
     app.UseSerilogRequestLogging();
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     app.MapHealthEndpoints();
+    app.MapGateway();
 
     app.Run();
 }
