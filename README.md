@@ -11,8 +11,10 @@ pipeline fine-tune LoRA/QLoRA dạng pluggable.
 
 ## Trạng thái
 
-**GĐ0 — Nền tảng.** Đã scaffold xong solution 12 project (Clean Architecture), health check,
-Serilog, OpenTelemetry và Postgres + pgvector qua docker-compose. Chưa có logic nghiệp vụ.
+**GĐ0 — Nền tảng: xong.** Control plane (CRUD + RBAC + audit + config snapshot), Gateway
+OpenAI-compatible trên YARP (auth ApiKey, task routing, fallback trước byte đầu tiên, quota,
+metering, SSE), Persistence (pgvector, cô lập tenant bằng composite FK, audit append-only) và
+test suite (unit + integration Testcontainers + E2E). GĐ1 kế tiếp: Worker.Health, CI, provider trên PC.
 
 ## Bắt đầu nhanh
 
@@ -35,6 +37,32 @@ dotnet run --project src/SelfHostLlm.Worker.Health      # http://localhost:5002
 curl localhost:5001/health/live     # process còn sống
 curl localhost:5001/health/ready    # 503 nếu Postgres không kết nối được
 ```
+
+## Chạy thử GĐ0 (demo thật)
+
+```bash
+# 1. Postgres + schema (migration KHÔNG tự chạy — người vận hành chạy tay)
+docker compose -f deploy/docker-compose.yml up -d
+dotnet tool restore
+dotnet tool run dotnet-ef database update -p src/SelfHostLlm.Persistence -s src/SelfHostLlm.ControlPlane.Api
+
+# 2. Secret dev — không commit
+dotnet user-secrets set "Bootstrap:AdminUsername" "admin" --project src/SelfHostLlm.ControlPlane.Api
+dotnet user-secrets set "Bootstrap:AdminPassword" "<mật khẩu ≥ 10 ký tự>" --project src/SelfHostLlm.ControlPlane.Api
+dotnet user-secrets set "InternalApi:Token" "<token dài ngẫu nhiên>" --project src/SelfHostLlm.ControlPlane.Api
+dotnet user-secrets set "ControlPlane:InternalToken" "<cùng token>" --project src/SelfHostLlm.Gateway
+
+# 3. Engine + hai host (mỗi lệnh một terminal)
+ollama serve && ollama pull qwen2.5:3b
+dotnet run --project src/SelfHostLlm.ControlPlane.Api   # :5001 — lần đầu tạo PlatformAdmin
+dotnet run --project src/SelfHostLlm.Gateway            # :8080 — kéo snapshot mỗi 30 giây
+
+# 4. Kịch bản demo: cấu hình qua CP → chat qua Gateway → usage + audit
+ADMIN_PASS='<mật khẩu>' deploy/demo/smoke.sh
+```
+
+CP và Gateway dùng chung key ring Data Protection (mặc định `~/Library/Application Support/SelfHostLlm/dp-keys`)
+để Gateway giải mã API key phía engine mà CP đã mã hoá.
 
 ## Tài liệu
 

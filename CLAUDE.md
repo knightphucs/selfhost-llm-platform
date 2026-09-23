@@ -8,7 +8,7 @@ Nền tảng cho phép: quản lý model / provider / deployment (address) / tok
 theo đầu việc (task-based routing) + fallback; RAG với cô lập dữ liệu theo tenant; pipeline
 training LoRA/QLoRA tách riêng.
 
-**Giai đoạn hiện tại: GĐ0 — Nền tảng.** Repo mới khởi tạo, chưa có code.
+**Giai đoạn hiện tại: GĐ0 xong — chuẩn bị GĐ1.** Đủ 12 project, control plane, gateway, test suite (unit + integration + E2E).
 
 **Định hướng thi công đã chốt:** dựng **kiến trúc đầy đủ ngay từ đầu** (12 project, Clean
 Architecture, observability, test suite) thay vì dựng tối giản rồi refactor. Đổi lại GĐ0 dài
@@ -337,7 +337,7 @@ curl http://192.168.1.50:11434/v1/models
 
 | GĐ | Nội dung | Trạng thái |
 |---|---|---|
-| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | **đang làm** |
+| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | **xong** |
 | GĐ1 | Worker.Health + observability, test suite + CI, thêm provider trên PC (khác address), so sánh Ollama vs vLLM | chưa |
 | GĐ2 | RAG ingest/query hoàn chỉnh + Row Level Security; implicit routing (classifier) nếu còn giờ | chưa |
 | GĐ3 | `ITrainingJobRunner` + script LoRA nhỏ trong `ml/`, đóng gói báo cáo, thu thập số liệu | chưa |
