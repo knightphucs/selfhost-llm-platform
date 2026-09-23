@@ -33,6 +33,9 @@ internal sealed class FakeTenantStore : ITenantStore
     public Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken) =>
         Task.FromResult(Items.Any(t => t.Slug == slug));
 
+    public Task<Tenant?> FindBySlugAsync(string slug, CancellationToken cancellationToken) =>
+        Task.FromResult(Items.FirstOrDefault(t => t.Slug == slug));
+
     public void Add(Tenant tenant) => Items.Add(tenant);
 }
 

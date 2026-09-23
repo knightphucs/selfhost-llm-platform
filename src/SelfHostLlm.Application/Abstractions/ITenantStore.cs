@@ -11,5 +11,7 @@ public interface ITenantStore
 
     Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken);
 
+    Task<Tenant?> FindBySlugAsync(string slug, CancellationToken cancellationToken);
+
     void Add(Tenant tenant);
 }

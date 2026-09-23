@@ -15,5 +15,8 @@ internal sealed class TenantStore(AppDbContext db) : ITenantStore
     public Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken) =>
         db.Tenants.AnyAsync(t => t.Slug == slug, cancellationToken);
 
+    public Task<Tenant?> FindBySlugAsync(string slug, CancellationToken cancellationToken) =>
+        db.Tenants.FirstOrDefaultAsync(t => t.Slug == slug, cancellationToken);
+
     public void Add(Tenant tenant) => db.Tenants.Add(tenant);
 }

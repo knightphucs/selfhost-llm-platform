@@ -1,3 +1,4 @@
+using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Domain.Access;
 using SelfHostLlm.Domain.Deployments;
 using SelfHostLlm.Domain.Models;
@@ -32,6 +33,8 @@ public static class AuditSnapshot
     public static ConsumerSnapshot Of(Consumer c) => new(c.Id, c.Name, c.Description, c.Enabled);
 
     public static ApiKeySnapshot Of(ApiKey k) => new(k.Id, k.ConsumerId, k.KeyPrefix, k.ExpiresAt, k.RevokedAt);
+
+    public static UserSnapshot Of(UserAccount u) => new(u.Id, u.Username, u.Email, u.Enabled, u.Roles.ToArray());
 
     public static QuotaSnapshot Of(Quota q) => new(q.Id, q.ConsumerId, q.TokensPerMinute, q.TokensPerMonth, q.MaxConcurrentRequests);
 }
@@ -71,3 +74,6 @@ public sealed record ConsumerSnapshot(Guid Id, string Name, string? Description,
 public sealed record ApiKeySnapshot(Guid Id, Guid ConsumerId, string KeyPrefix, DateTimeOffset? ExpiresAt, DateTimeOffset? RevokedAt);
 
 public sealed record QuotaSnapshot(Guid Id, Guid ConsumerId, int? TokensPerMinute, long? TokensPerMonth, int? MaxConcurrentRequests);
+
+/// <summary>Không có password hash hay security stamp.</summary>
+public sealed record UserSnapshot(Guid Id, string Username, string? Email, bool Enabled, IReadOnlyList<string> Roles);
