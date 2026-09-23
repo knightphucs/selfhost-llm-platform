@@ -14,8 +14,10 @@ public sealed partial class FallbackExecutor(ILogger<FallbackExecutor> logger, T
     /// Chạy chuỗi fallback.
     /// </summary>
     /// <param name="attempt">
-    /// Gọi một deployment. Hợp đồng: phải trả kết quả <b>trước khi ghi byte đầu tiên</b> cho
-    /// client — sau thời điểm đó response đã commit và không fallback được nữa (QĐ-3).
+    /// Gọi một deployment. Hợp đồng: chỉ được trả <see cref="AttemptOutcome.Transient"/> khi
+    /// <b>chưa ghi byte nào</b> cho client — một khi response đã commit thì không fallback được nữa
+    /// (QĐ-3). Với YARP, lần thử thành công trả kết quả sau khi đã relay xong response; lần thử lỗi
+    /// tạm thời bị chặn body từ trước nên chưa có byte nào đi ra.
     /// </param>
     /// <param name="cancellationToken">Token của request client. Bị huỷ thì dừng ngay, không thử tiếp.</param>
     public async Task<FallbackResult<T>> ExecuteAsync<T>(
