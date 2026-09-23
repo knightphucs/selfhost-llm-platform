@@ -115,8 +115,14 @@ internal sealed partial class SnapshotRefresher(
     private static partial void LogCacheWriteFailed(ILogger logger, Exception exception);
 }
 
-/// <summary>Làm mới cấu hình định kỳ (mặc định 30 giây).</summary>
-internal sealed class ConfigSnapshotPoller(SnapshotRefresher refresher, IConfiguration configuration) : BackgroundService
+/// <summary>
+/// Làm mới cấu hình định kỳ (mặc định 30 giây). Lỗi bất ngờ chỉ được log — BackgroundService ném
+/// exception sẽ làm dừng cả host, trái với bất biến "CP chết thì Gateway vẫn phục vụ".
+/// </summary>
+internal sealed partial class ConfigSnapshotPoller(
+    SnapshotRefresher refresher,
+    IConfiguration configuration,
+    ILogger<ConfigSnapshotPoller> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -124,8 +130,18 @@ internal sealed class ConfigSnapshotPoller(SnapshotRefresher refresher, IConfigu
         using var timer = new PeriodicTimer(interval);
         do
         {
-            await refresher.RefreshAsync(stoppingToken);
+            try
+            {
+                await refresher.RefreshAsync(stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                LogRefreshCrashed(logger, ex);
+            }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Làm mới config snapshot gặp lỗi không mong muốn — giữ snapshot hiện tại")]
+    private static partial void LogRefreshCrashed(ILogger logger, Exception exception);
 }

@@ -105,6 +105,20 @@ public sealed class GatewayApp : IAsyncDisposable
         throw new TimeoutException("YARP chưa nạp cluster của snapshot.");
     }
 
+    /// <summary>Làm mới cấu hình bằng nguồn thật (HTTP tới control plane) rồi chờ YARP nạp cluster.</summary>
+    public async Task<bool> RefreshAsync()
+    {
+        _ = _factory.Server;
+        var refreshed = await Services.GetRequiredService<SnapshotRefresher>().RefreshAsync(CancellationToken.None);
+        var state = Services.GetRequiredService<GatewayStateStore>().Current;
+        if (state is not null)
+        {
+            await WaitForClustersAsync(state.Deployments.Select(d => d.Id));
+        }
+
+        return refreshed;
+    }
+
     public string Protect(string plaintext) => Services.GetRequiredService<ISecretProtector>().Protect(plaintext);
 
     public async ValueTask DisposeAsync()
