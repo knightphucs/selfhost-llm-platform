@@ -68,6 +68,7 @@ CP và Gateway dùng chung key ring Data Protection (mặc định `~/Library/Ap
 
 | File | Nội dung |
 |---|---|
+| [ROADMAP.md](ROADMAP.md) | Tiến độ theo giai đoạn: ngày, nhánh, quyết định, việc tồn đọng, kế hoạch GĐ sau |
 | [CLAUDE.md](CLAUDE.md) | Kiến trúc đã chốt, domain model, quy ước code, ràng buộc phần cứng |
 | [docs/architecture.md](docs/architecture.md) | Context / container / component diagram, tự xây vs tái sử dụng |
 | [docs/sequences.md](docs/sequences.md) | Chat completion + fallback + metering, RAG, health check, training |

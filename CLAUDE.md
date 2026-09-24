@@ -8,7 +8,11 @@ Nền tảng cho phép: quản lý model / provider / deployment (address) / tok
 theo đầu việc (task-based routing) + fallback; RAG với cô lập dữ liệu theo tenant; pipeline
 training LoRA/QLoRA tách riêng.
 
-**Giai đoạn hiện tại: GĐ0 xong — chuẩn bị GĐ1.** Đủ 12 project, control plane, gateway, test suite (unit + integration + E2E).
+**Giai đoạn hiện tại: GĐ0 xong (2026-09-23) — chuẩn bị GĐ1.** Đủ 12 project, control plane,
+gateway, test suite (unit + integration + E2E).
+
+> **Đầu mỗi phiên: đọc `ROADMAP.md`** — trạng thái, ngày, nhánh đang làm, việc tồn đọng, kế
+> hoạch GĐ kế tiếp và các câu hỏi mở. Cuối mỗi bước lớn: cập nhật `ROADMAP.md`.
 
 **Định hướng thi công đã chốt:** dựng **kiến trúc đầy đủ ngay từ đầu** (12 project, Clean
 Architecture, observability, test suite) thay vì dựng tối giản rồi refactor. Đổi lại GĐ0 dài
@@ -335,12 +339,14 @@ curl http://192.168.1.50:11434/v1/models
 
 ## Lộ trình
 
-| GĐ | Nội dung | Trạng thái |
-|---|---|---|
-| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | **xong** |
-| GĐ1 | Worker.Health + observability, test suite + CI, thêm provider trên PC (khác address), so sánh Ollama vs vLLM | chưa |
-| GĐ2 | RAG ingest/query hoàn chỉnh + Row Level Security; implicit routing (classifier) nếu còn giờ | chưa |
-| GĐ3 | `ITrainingJobRunner` + script LoRA nhỏ trong `ml/`, đóng gói báo cáo, thu thập số liệu | chưa |
+| GĐ | Nội dung | Thời gian | Trạng thái |
+|---|---|---|---|
+| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | 2026-09-21 → 2026-09-23 | **xong** (nhánh `gd0/gateway`, chưa merge) |
+| GĐ1 | Worker.Health + observability, test suite + CI, thêm provider trên PC (khác address), so sánh Ollama vs vLLM | — | chưa |
+| GĐ2 | RAG ingest/query hoàn chỉnh + Row Level Security; implicit routing (classifier) nếu còn giờ | — | chưa |
+| GĐ3 | `ITrainingJobRunner` + script LoRA nhỏ trong `ml/`, đóng gói báo cáo, thu thập số liệu | — | chưa |
+
+Chi tiết từng GĐ (bước, nhánh, quyết định đã chốt, lệch kế hoạch, việc tồn đọng): `ROADMAP.md`.
 
 Do chọn dựng kiến trúc đầy đủ ngay từ đầu, **audit log, RBAC và task routing đã nằm ở GĐ0**
 thay vì GĐ2/GĐ3 như lộ trình ban đầu trong `docs/selfhost-llm-project.md`.
