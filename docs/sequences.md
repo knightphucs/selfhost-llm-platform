@@ -102,7 +102,7 @@ sequenceDiagram
         GW-->>ING: vectors
     end
 
-    ING->>DB: INSERT chunks + embeddings<br/>kèm tenant_id = A
+    ING->>DB: INSERT chunk + embedding<br/>kèm tenant_id = A
     DB-->>ING: ok
     ING-->>CP: số chunk đã ingest
     CP-->>U: 201 Created
@@ -132,7 +132,7 @@ sequenceDiagram
     EMB-->>GW: query vector
     GW-->>RAG: query vector
 
-    RAG->>DB: SELECT FROM chunks<br/>WHERE tenant_id = 'A'<br/>ORDER BY khoảng cách vector LIMIT k
+    RAG->>DB: SELECT FROM chunk<br/>WHERE tenant_id = 'A'<br/>ORDER BY khoảng cách vector LIMIT k
 
     Note over RAG,DB: tenant_id nằm trong WHERE, KHÔNG lọc sau khi<br/>lấy kết quả. Filter ở tầng app là lỗi bảo mật.
 
@@ -148,11 +148,12 @@ sequenceDiagram
 Câu truy vấn thật ở bước retrieval:
 
 ```sql
-SELECT c.id, c.content, c.embedding <-> @queryVector AS distance
-FROM chunks c
+-- <=> là cosine distance, khớp index HNSW vector_cosine_ops (QĐ-1)
+SELECT c.id, c.content, c.embedding <=> @queryVector AS distance
+FROM chunk c
 WHERE c.tenant_id = @tenantId
   AND c.collection_id = @collectionId
-ORDER BY distance
+ORDER BY c.embedding <=> @queryVector
 LIMIT @k;
 ```
 
