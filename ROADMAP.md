@@ -10,16 +10,18 @@
 
 ## Bắt đầu phiên sau từ đây
 
-1. GĐ0 đã merge vào `main` (PR #2–#8) và push lên `origin`. Nhánh dọn dẹp sau GĐ0:
-   **`gd0/secrets-hardening`** (secret ra khỏi repo/compose, sửa docs) — chờ merge.
-2. Việc cần bạn làm trước khi bắt đầu GĐ1 (xem "Việc tồn đọng"):
-   - Merge `gd0/secrets-hardening`. DB dev đã migrate, smoke test đã chạy xanh (2026-09-29).
+1. GĐ0 đã merge vào `main` (PR #2–#8). Nhánh dọn dẹp sau GĐ0 **`gd0/secrets-hardening`**
+   (secret ra khỏi repo/compose, smoke test, cập nhật tài liệu) — **chờ push + merge**. Kiểm tra
+   bằng `git log --oneline main..gd0/secrets-hardening`; nếu đã merge thì bỏ qua.
+2. Môi trường dev đã sẵn sàng (2026-09-29): user-secrets đủ cho 3 host, DB dev đã migrate,
+   admin đã bootstrap, `deploy/demo/smoke.sh` chạy xanh cả 8 bước với Ollama `qwen2.5:3b`.
 3. Kiểm tra nhanh repo còn xanh:
    ```bash
    docker compose -f deploy/docker-compose.yml up -d
    dotnet build && dotnet test      # kỳ vọng: 0 warning, 349 test pass
    ```
-4. Bước kế tiếp: **lên plan GĐ1** (mục GĐ1 bên dưới). Chốt các "câu hỏi mở" trước khi code.
+4. Bước kế tiếp: **lên plan GĐ1** (mục GĐ1 bên dưới). Chốt 4 "câu hỏi mở" với người dùng
+   trước khi code — đặc biệt hạn nộp báo cáo, vì nó quyết định cắt gì ở GĐ1–GĐ3.
 
 ---
 
@@ -52,7 +54,7 @@ Mỗi nhánh tách từ nhánh ngay trước nó, nên merge `gd0/gateway` là c
 | 5 | ControlPlane.Api: Identity bearer, RBAC, endpoint admin, config snapshot | `gd0/controlplane` | 5 | 2026-09-23 |
 | 6 | Adapters.Inference: adapter OpenAI-compatible, probe, tokenizer | `gd0/adapters` | 2 | 2026-09-23 |
 | 7 | Gateway trên YARP: auth ApiKey, routing, fallback, quota, metering, SSE, E2E | `gd0/gateway` | 6 | 2026-09-23 |
-| 8 | Dọn dẹp sau GĐ0: secret ra khỏi appsettings/compose, sửa SQL trong docs | `gd0/secrets-hardening` | 3 | 2026-09-29 |
+| 8 | Dọn dẹp sau GĐ0: secret ra khỏi appsettings/compose, log lỗi bootstrap, sửa smoke.sh, sửa SQL trong docs, cập nhật CLAUDE.md/ROADMAP | `gd0/secrets-hardening` | 7 | 2026-09-29 |
 
 Test cuối GĐ0: Domain 106 · Application 143 · ControlPlane integration 67 · Gateway integration 33
 (có E2E). Tổng **349**.
@@ -105,11 +107,11 @@ Test cuối GĐ0: Domain 106 · Application 143 · ControlPlane integration 67 �
 - [x] User-secrets: `ConnectionStrings:Postgres` (3 host), `InternalApi:Token` (CP) = `ControlPlane:InternalToken` (Gateway), `Bootstrap:AdminUsername` (2026-09-29).
 - [x] Password Postgres ra khỏi compose/.env → Docker secret; đổi password dev đã lộ (2026-09-29).
 - [x] Sửa ví dụ SQL trong `docs/sequences.md` §2b (`chunk`, `<=>`) (2026-09-29).
-- [ ] Merge `gd0/secrets-hardening` vào `main`.
 - [x] Đặt `Bootstrap:AdminPassword` (≥ 10 ký tự, có chữ hoa/thường/số/ký tự đặc biệt — chính sách mặc định của Identity).
 - [x] Chạy `database update` trên DB dev (người dùng chạy tay).
+- [x] `docs/selfhost-llm-project.md` đã bổ sung: là **dàn ý ban đầu**, đã bị CLAUDE.md + ROADMAP thay thế (không sửa nội dung, chỉ làm tư liệu) (2026-09-29).
 - [x] Chạy thật `deploy/demo/smoke.sh` với Ollama `qwen2.5:3b` trên Mac — đủ 8 bước, usage + audit ghi đúng (2026-09-29).
-- [ ] `docs/selfhost-llm-project.md` được CLAUDE.md nhắc tới nhưng không có trong repo — cần bạn bổ sung file hoặc bỏ tham chiếu.
+- [ ] Push + merge `gd0/secrets-hardening` vào `main`.
 
 ---
 

@@ -8,8 +8,9 @@ Nền tảng cho phép: quản lý model / provider / deployment (address) / tok
 theo đầu việc (task-based routing) + fallback; RAG với cô lập dữ liệu theo tenant; pipeline
 training LoRA/QLoRA tách riêng.
 
-**Giai đoạn hiện tại: GĐ0 xong (2026-09-23) — chuẩn bị GĐ1.** Đủ 12 project, control plane,
-gateway, test suite (unit + integration + E2E).
+**Giai đoạn hiện tại: GĐ0 xong và đã merge `main` — chuẩn bị GĐ1.** Đủ 12 project, control
+plane, gateway, test suite (unit + integration + E2E); smoke test thật với Ollama đã chạy xanh
+(2026-09-29).
 
 > **Đầu mỗi phiên: đọc `ROADMAP.md`** — trạng thái, ngày, nhánh đang làm, việc tồn đọng, kế
 > hoạch GĐ kế tiếp và các câu hỏi mở. Cuối mỗi bước lớn: cập nhật `ROADMAP.md`.
@@ -37,6 +38,8 @@ hơn. Hệ quả: audit log, RBAC và task routing được implement **sớm h�
   `docs:`). Commit nhỏ, mỗi commit build xanh.
 - Sau mỗi bước lớn: chạy `dotnet build && dotnet test` trước khi báo hoàn thành.
 - **Không tự chạy `dotnet ef database update`** — tạo migration xong thì dừng và báo.
+- **Không bao giờ in giá trị secret** ra terminal/log/commit (password, token, connection
+  string). Kiểm tra secret thì chỉ in tên key, độ dài, hoặc so khớp đúng/sai.
 - **Không sửa file trong `docs/`** trừ khi được yêu cầu rõ ràng. Đó là tài liệu đã chốt và là
   phụ lục báo cáo.
 - Khi một yêu cầu mâu thuẫn với file này → **dừng lại và hỏi**, không tự giải quyết.
@@ -313,17 +316,20 @@ rõ ràng trong báo cáo.
 ## Lệnh thường dùng
 
 ```bash
-# Hạ tầng
+# Hạ tầng (cần deploy/secrets/postgres_password.txt — xem README)
 docker compose -f deploy/docker-compose.yml up -d     # Postgres + pgvector
 
 # Build & test
 dotnet build
 dotnet test
 
-# Migration (chạy từ root)
-dotnet ef migrations add <Name> \
+# Migration (chạy từ root). Dùng local tool — dotnet-ef global trên máy là bản 10, không chạy với .NET 8
+dotnet tool run dotnet-ef migrations add <Name> \
   -p src/SelfHostLlm.Persistence -s src/SelfHostLlm.ControlPlane.Api
-dotnet ef database update \
+# database update: design-time factory KHÔNG đọc user-secrets → truyền connection string qua env
+ConnectionStrings__Postgres="$(dotnet user-secrets list --project src/SelfHostLlm.ControlPlane.Api \
+  | sed -n 's/^ConnectionStrings:Postgres = //p')" \
+  dotnet tool run dotnet-ef database update \
   -p src/SelfHostLlm.Persistence -s src/SelfHostLlm.ControlPlane.Api
 
 # Chạy
@@ -333,7 +339,22 @@ dotnet run --project src/SelfHostLlm.Worker.Health
 
 # Kiểm tra engine trên PC từ Mac (làm TRƯỚC khi seed deployment)
 curl http://192.168.1.50:11434/v1/models
+
+# Demo end-to-end (CP + Gateway + Ollama đang chạy)
+ADMIN_PASS='<Bootstrap:AdminPassword>' deploy/demo/smoke.sh
 ```
+
+**Secret dev** — không có secret nào trong `appsettings*.json`, `.env` hay `docker-compose.yml`:
+
+| Secret | Nơi lưu |
+|---|---|
+| `ConnectionStrings:Postgres` | user-secrets của cả 3 host (`selfhostllm-controlplane`, `selfhostllm-gateway`, `selfhostllm-worker-health`) |
+| `InternalApi:Token` (CP) = `ControlPlane:InternalToken` (Gateway) | user-secrets, hai giá trị phải trùng nhau |
+| `Bootstrap:AdminUsername/AdminPassword` | user-secrets của CP. Password theo chính sách mặc định của Identity: ≥ 10 ký tự, có hoa/thường/số/ký tự đặc biệt |
+| Password Postgres | `deploy/secrets/postgres_password.txt` (gitignore) → Docker secret `POSTGRES_PASSWORD_FILE` |
+
+Host project mới cần `UserSecretsId` dạng chuỗi `selfhostllm-<host>`, viết tay trong csproj
+(`dotnet user-secrets init` sinh GUID và làm hỏng format).
 
 ---
 
@@ -341,7 +362,7 @@ curl http://192.168.1.50:11434/v1/models
 
 | GĐ | Nội dung | Thời gian | Trạng thái |
 |---|---|---|---|
-| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | 2026-09-21 → 2026-09-23 | **xong** (nhánh `gd0/gateway`, chưa merge) |
+| **GĐ0** | Scaffold đầy đủ 12 project, Domain + Contracts, Persistence + migration, Application, Adapters.Inference, ControlPlane.Api (CRUD + RBAC + audit), Gateway (auth + routing + fallback + metering + SSE) | 2026-09-21 → 2026-09-23 | **xong** (nhánh `gd0/gateway`, đã merge) |
 | GĐ1 | Worker.Health + observability, test suite + CI, thêm provider trên PC (khác address), so sánh Ollama vs vLLM | — | chưa |
 | GĐ2 | RAG ingest/query hoàn chỉnh + Row Level Security; implicit routing (classifier) nếu còn giờ | — | chưa |
 | GĐ3 | `ITrainingJobRunner` + script LoRA nhỏ trong `ml/`, đóng gói báo cáo, thu thập số liệu | — | chưa |
@@ -350,6 +371,9 @@ Chi tiết từng GĐ (bước, nhánh, quyết định đã chốt, lệch kế
 
 Do chọn dựng kiến trúc đầy đủ ngay từ đầu, **audit log, RBAC và task routing đã nằm ở GĐ0**
 thay vì GĐ2/GĐ3 như lộ trình ban đầu trong `docs/selfhost-llm-project.md`.
+
+`docs/selfhost-llm-project.md` là **dàn ý ban đầu** của đồ án, giữ lại làm tư liệu. Chỗ nào nó
+khác với file này (gateway LiteLLM, Qdrant, lộ trình GĐ) thì **file này và `ROADMAP.md` thắng**.
 
 Thứ tự thi công GĐ0: `scaffold` → `Domain + Contracts` → `Persistence` → `Application` →
 `Adapters.Inference` → `ControlPlane.Api` → `Gateway`.
