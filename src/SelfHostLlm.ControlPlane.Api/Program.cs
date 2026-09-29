@@ -7,9 +7,12 @@ using SelfHostLlm.ControlPlane.Api.Hosting;
 using SelfHostLlm.Persistence;
 using Serilog;
 
+// Logger tạm cho giai đoạn khởi động; UseSerilog thay bằng logger đầy đủ. Không dùng
+// CreateBootstrapLogger: logger đó chỉ "freeze" được một lần mỗi process, nên vỡ khi nhiều host
+// khởi động song song (integration test).
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
-    .CreateBootstrapLogger();
+    .CreateLogger();
 
 try
 {

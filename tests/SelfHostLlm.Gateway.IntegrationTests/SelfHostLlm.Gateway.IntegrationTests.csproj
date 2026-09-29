@@ -22,5 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SelfHostLlm.Gateway\SelfHostLlm.Gateway.csproj" />
+    <!-- Alias: cả hai host đều có lớp Program ở global namespace (test E2E chạy CP + Gateway). -->
+    <ProjectReference Include="..\..\src\SelfHostLlm.ControlPlane.Api\SelfHostLlm.ControlPlane.Api.csproj" Aliases="controlplane" />
   </ItemGroup>
 </Project>

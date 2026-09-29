@@ -13,12 +13,15 @@ namespace SelfHostLlm.Application;
 
 public static class DependencyInjection
 {
-    /// <summary>Đăng ký dispatcher, pipeline behavior, handler, validator và các service lõi.</summary>
+    /// <summary>
+    /// Toàn bộ Application: dịch vụ lõi + dispatcher, pipeline behavior, handler, validator, audit.
+    /// Dùng ở ControlPlane — nơi có <see cref="ICurrentActor"/> và Identity.
+    /// </summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         var assembly = typeof(DependencyInjection).Assembly;
 
-        services.TryAddSingleton(TimeProvider.System);
+        services.AddApplicationCore();
         services.AddScoped<IDispatcher, Dispatcher>();
 
         // Thứ tự đăng ký = thứ tự chạy (ngoài vào trong): chặn truy cập chéo tenant trước, rồi mới validate.
@@ -27,15 +30,24 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
         AddRequestHandlers(services, assembly);
-
-        // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
         services.AddScoped<IAuditTrail, AuditTrail>();
-        services.AddSingleton<ApiKeyHasher>();
-        services.AddSingleton<FallbackExecutor>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Chỉ các dịch vụ lõi của data plane (không use case quản trị): ApiKeyHasher, FallbackExecutor,
+    /// quota. Gateway dùng bản này — nó không có danh tính người dùng quản trị.
+    /// </summary>
+    public static IServiceCollection AddApplicationCore(this IServiceCollection services)
+    {
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<ApiKeyHasher>();
+        services.TryAddSingleton<FallbackExecutor>();
 
         // Quota giữ bộ đếm in-memory nên bắt buộc singleton. Gateway thay baseline bằng bản đọc từ snapshot.
         services.TryAddSingleton<IMonthlyUsageBaseline, NullMonthlyUsageBaseline>();
-        services.AddSingleton<IQuotaService, InMemoryQuotaService>();
+        services.TryAddSingleton<IQuotaService, InMemoryQuotaService>();
 
         return services;
     }

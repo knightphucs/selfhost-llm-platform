@@ -72,8 +72,9 @@ internal static class ObservabilityExtensions
     /// </summary>
     public static WebApplication MapHealthEndpoints(this WebApplication app)
     {
-        app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
-        app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
+        // Health mở ẩn danh — fallback policy của gateway yêu cầu API key.
+        app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous();
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") }).AllowAnonymous();
         return app;
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Application.Security;
 
 namespace SelfHostLlm.Persistence.Identity;
@@ -22,6 +23,9 @@ public static class IdentityBuilderExtensions
             .AddUserStore<AppUserStore>()
             .AddClaimsPrincipalFactory<AppUserClaimsPrincipalFactory>();
         builder.Services.AddScoped<IUserConfirmation<AppUser>, EnabledUserConfirmation>();
+
+        // Cần UserManager nên đăng ký cùng Identity — host không có Identity (Gateway) không thấy nó.
+        builder.Services.AddScoped<IUserDirectory, UserDirectory>();
         return builder;
     }
 }
