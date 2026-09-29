@@ -13,9 +13,7 @@
 1. GĐ0 đã merge vào `main` (PR #2–#8) và push lên `origin`. Nhánh dọn dẹp sau GĐ0:
    **`gd0/secrets-hardening`** (secret ra khỏi repo/compose, sửa docs) — chờ merge.
 2. Việc cần bạn làm trước khi bắt đầu GĐ1 (xem "Việc tồn đọng"):
-   - Đặt `Bootstrap:AdminPassword`.
-   - Chạy `database update` (lệnh trong README, cần biến `ConnectionStrings__Postgres`).
-   - Bật Ollama và chạy thử `deploy/demo/smoke.sh`.
+   - Merge `gd0/secrets-hardening`. DB dev đã migrate, smoke test đã chạy xanh (2026-09-29).
 3. Kiểm tra nhanh repo còn xanh:
    ```bash
    docker compose -f deploy/docker-compose.yml up -d
@@ -88,6 +86,8 @@ Test cuối GĐ0: Domain 106 · Application 143 · ControlPlane integration 67 �
 - Analyzer tắt có chủ đích: CA1716, CA1000 (`.editorconfig`); CA1711 cho riêng `Collection`.
 - `dotnet user-secrets init` sinh GUID, ghi BOM và dán `PropertyGroup` dính dòng → sửa tay csproj, đổi tên thư mục trong `~/.microsoft/usersecrets/` cho khớp.
 - `DesignTimeAppDbContextFactory` (dùng bởi `dotnet-ef`) **không đọc user-secrets** → truyền `ConnectionStrings__Postgres` khi chạy `database update`.
+- `smoke.sh` bước SSE từng cắt stream bằng `head -c` → curl lỗi 23 (broken pipe) + `pipefail` dừng script. Nay đọc hết stream rồi tóm tắt.
+- Stream bị client cắt ngang thì không có chunk usage → Gateway rơi về tokenizer, `tokens_estimated = true` (thấy ở `estimatedRequestCount` của lần smoke đầu) — đúng QĐ-5.
 - `POSTGRES_PASSWORD(_FILE)` chỉ có hiệu lực khi khởi tạo volume; volume đã có thì đổi password bằng `ALTER USER`.
 - Password dev cũ `selfhostllm_dev` nằm trong git history → đã đổi sang password ngẫu nhiên (2026-09-29), không dùng lại.
 
@@ -106,9 +106,9 @@ Test cuối GĐ0: Domain 106 · Application 143 · ControlPlane integration 67 �
 - [x] Password Postgres ra khỏi compose/.env → Docker secret; đổi password dev đã lộ (2026-09-29).
 - [x] Sửa ví dụ SQL trong `docs/sequences.md` §2b (`chunk`, `<=>`) (2026-09-29).
 - [ ] Merge `gd0/secrets-hardening` vào `main`.
-- [ ] Đặt `Bootstrap:AdminPassword` (người dùng tự đặt, ≥ 10 ký tự).
-- [ ] Chạy `database update` trên DB dev (Claude không tự chạy theo CLAUDE.md) — lệnh trong README.
-- [ ] Chạy thật `deploy/demo/smoke.sh` với Ollama. Script mới được kiểm cú pháp, chưa chạy.
+- [x] Đặt `Bootstrap:AdminPassword` (≥ 10 ký tự, có chữ hoa/thường/số/ký tự đặc biệt — chính sách mặc định của Identity).
+- [x] Chạy `database update` trên DB dev (người dùng chạy tay).
+- [x] Chạy thật `deploy/demo/smoke.sh` với Ollama `qwen2.5:3b` trên Mac — đủ 8 bước, usage + audit ghi đúng (2026-09-29).
 - [ ] `docs/selfhost-llm-project.md` được CLAUDE.md nhắc tới nhưng không có trong repo — cần bạn bổ sung file hoặc bỏ tham chiếu.
 
 ---

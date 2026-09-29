@@ -20,6 +20,9 @@ SNAPSHOT_WAIT="${SNAPSHOT_WAIT:-31}"                      # Gateway kéo snapsho
 need() { command -v "$1" >/dev/null || { echo "Thiếu $1"; exit 1; }; }
 need curl; need jq
 
+STREAM_FILE=$(mktemp)
+trap 'rm -f "$STREAM_FILE"' EXIT
+
 step() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 post() { curl -fsS -X POST "$CP$1" -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d "$2"; }
 
@@ -57,7 +60,16 @@ curl -fsS "$GW/v1/chat/completions" -H "Authorization: Bearer $KEY" -H 'content-
 
 step "7. Chat streaming (SSE)"
 curl -fsSN "$GW/v1/chat/completions" -H "Authorization: Bearer $KEY" -H 'content-type: application/json' \
-  -d "{\"model\":\"chat-demo-$SUFFIX\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"Đếm từ 1 đến 5.\"}]}" | head -c 600; echo
+  -d "{\"model\":\"chat-demo-$SUFFIX\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"Đếm từ 1 đến 5.\"}]}" \
+  > "$STREAM_FILE"
+# Đọc hết stream rồi mới tóm tắt — cắt ngang bằng `head` làm curl lỗi 23 (broken pipe) và
+# pipefail dừng cả script.
+DATA=$(sed -n 's/^data: //p' "$STREAM_FILE" | grep -v '^\[DONE\]$')
+echo "chunk     : $(echo "$DATA" | grep -c .)"
+echo "nội dung  : $(echo "$DATA" | jq -rj '.choices[0].delta.content // empty')"
+# Chunk cuối chứa usage nhờ Gateway tự bật stream_options.include_usage (QĐ-4).
+echo "usage     : $(echo "$DATA" | jq -c 'select(.usage != null) | .usage')"
+grep -q '^data: \[DONE\]' "$STREAM_FILE" && echo "kết thúc  : [DONE]"
 
 step "8. Usage (Gateway ghi batch tối đa 2 giây) và audit log"
 sleep 3
