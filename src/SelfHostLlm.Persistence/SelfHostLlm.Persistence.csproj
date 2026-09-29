@@ -7,4 +7,12 @@
     <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
     <ProjectReference Include="..\SelfHostLlm.Domain\SelfHostLlm.Domain.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+  </ItemGroup>
 </Project>
