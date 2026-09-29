@@ -1,6 +1,8 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using SelfHostLlm.Application.Abstractions;
 using SelfHostLlm.Application.Common.Messaging;
+using SelfHostLlm.Application.UnitTests.Fakes;
 using SelfHostLlm.Domain.Common;
 
 namespace SelfHostLlm.Application.UnitTests.Messaging;
@@ -42,6 +44,7 @@ public sealed class DispatcherTests
         var services = new ServiceCollection();
         services.AddApplication();
         services.AddSingleton(trace);
+        services.AddSingleton<ICurrentActor>(new FakeActor());
         services.AddScoped<IRequestHandler<Greet, Result<string>>, GreetHandler>();
         services.AddScoped<IValidator<Greet>, GreetValidator>();
         configure?.Invoke(services);

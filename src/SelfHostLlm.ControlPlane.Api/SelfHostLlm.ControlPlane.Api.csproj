@@ -1,11 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- Secret dev (InternalApi:Token, Bootstrap:AdminPassword) đặt bằng: dotnet user-secrets set ... -->
+    <UserSecretsId>selfhostllm-controlplane</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="SelfHostLlm.ControlPlane.IntegrationTests" />
+    <InternalsVisibleTo Include="SelfHostLlm.Gateway.IntegrationTests" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
     <ProjectReference Include="..\SelfHostLlm.Persistence\SelfHostLlm.Persistence.csproj" />
+    <ProjectReference Include="..\SelfHostLlm.Adapters.Inference\SelfHostLlm.Adapters.Inference.csproj" />
     <ProjectReference Include="..\SelfHostLlm.Contracts\SelfHostLlm.Contracts.csproj" />
   </ItemGroup>
 

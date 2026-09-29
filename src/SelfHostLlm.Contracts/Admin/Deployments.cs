@@ -40,3 +40,6 @@ public sealed record DeploymentResponse(
     int? LatencyMsP50,
     DateTimeOffset? LastProbedAt,
     bool Enabled);
+
+/// <summary>Kết quả probe thủ công (<c>POST .../deployments/{id}/probe</c>).</summary>
+public sealed record DeploymentProbeResponse(bool Healthy, int LatencyMs, int? StatusCode, string? Error, DeploymentResponse Deployment);

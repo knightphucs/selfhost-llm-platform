@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SelfHostLlm.Application.Abstractions;
+using SelfHostLlm.Application.Auditing;
 using SelfHostLlm.Application.Common.Behaviors;
 using SelfHostLlm.Application.Common.Messaging;
 using SelfHostLlm.Application.Metering;
@@ -20,13 +21,15 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IDispatcher, Dispatcher>();
 
-        // Thứ tự đăng ký = thứ tự chạy (ngoài vào trong).
+        // Thứ tự đăng ký = thứ tự chạy (ngoài vào trong): chặn truy cập chéo tenant trước, rồi mới validate.
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(TenantAccessBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         services.AddValidatorsFromAssembly(assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
         AddRequestHandlers(services, assembly);
 
         // Service lõi — không trạng thái hoặc tự quản lý trạng thái thread-safe.
+        services.AddScoped<IAuditTrail, AuditTrail>();
         services.AddSingleton<ApiKeyHasher>();
         services.AddSingleton<FallbackExecutor>();
 
