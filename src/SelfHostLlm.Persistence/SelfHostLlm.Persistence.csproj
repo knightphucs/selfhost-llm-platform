@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="SelfHostLlm.ControlPlane.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
+    <ProjectReference Include="..\SelfHostLlm.Domain\SelfHostLlm.Domain.csproj" />
+  </ItemGroup>
+</Project>

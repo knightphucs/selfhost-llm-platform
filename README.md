@@ -11,7 +11,30 @@ pipeline fine-tune LoRA/QLoRA dạng pluggable.
 
 ## Trạng thái
 
-**GĐ0 — Nền tảng.** Repo mới khởi tạo: mới có tài liệu kiến trúc, chưa có code.
+**GĐ0 — Nền tảng.** Đã scaffold xong solution 12 project (Clean Architecture), health check,
+Serilog, OpenTelemetry và Postgres + pgvector qua docker-compose. Chưa có logic nghiệp vụ.
+
+## Bắt đầu nhanh
+
+Yêu cầu: .NET SDK 8 (pin trong `global.json`), Docker.
+
+```bash
+# Postgres 16 + pgvector
+docker compose -f deploy/docker-compose.yml up -d
+
+# Build & test
+dotnet build
+dotnet test
+
+# Chạy host (profile Development)
+dotnet run --project src/SelfHostLlm.ControlPlane.Api   # http://localhost:5001
+dotnet run --project src/SelfHostLlm.Gateway            # http://localhost:8080
+dotnet run --project src/SelfHostLlm.Worker.Health      # http://localhost:5002
+
+# Health check
+curl localhost:5001/health/live     # process còn sống
+curl localhost:5001/health/ready    # 503 nếu Postgres không kết nối được
+```
 
 ## Tài liệu
 

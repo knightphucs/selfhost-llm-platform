@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="SelfHostLlm.Gateway.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
+    <ProjectReference Include="..\SelfHostLlm.Contracts\SelfHostLlm.Contracts.csproj" />
+  </ItemGroup>
+</Project>
