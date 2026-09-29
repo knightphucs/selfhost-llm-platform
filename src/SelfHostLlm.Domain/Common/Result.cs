@@ -4,7 +4,7 @@ namespace SelfHostLlm.Domain.Common;
 /// Kết quả của một thao tác nghiệp vụ không trả giá trị.
 /// Dùng thay cho exception với các lỗi dự đoán được.
 /// </summary>
-public class Result
+public class Result : IFailureFactory<Result>
 {
     private protected Result(Error? error)
     {
@@ -25,11 +25,13 @@ public class Result
         return new Result(error);
     }
 
+    public static Result FromError(Error error) => Failure(error);
+
     public static implicit operator Result(Error error) => Failure(error);
 }
 
 /// <summary>Kết quả của một thao tác nghiệp vụ trả về <typeparamref name="T"/>.</summary>
-public sealed class Result<T> : Result
+public sealed class Result<T> : Result, IFailureFactory<Result<T>>
 {
     private readonly T? _value;
 
@@ -56,6 +58,8 @@ public sealed class Result<T> : Result
         ArgumentNullException.ThrowIfNull(error);
         return new Result<T>(error);
     }
+
+    public static new Result<T> FromError(Error error) => Failure(error);
 
 #pragma warning disable CA2225 // Đã có Success/Failure làm phương thức thay thế có tên.
     public static implicit operator Result<T>(T value) => Success(value);

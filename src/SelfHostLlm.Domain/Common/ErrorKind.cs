@@ -9,4 +9,7 @@ public enum ErrorKind
     Unauthorized,
     Forbidden,
     Unavailable,
+
+    /// <summary>Vượt quota (rate, budget hoặc concurrency) → 429.</summary>
+    RateLimited,
 }

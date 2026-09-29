@@ -52,4 +52,29 @@ public sealed class ResultTests
     {
         Result.Success().IsSuccess.Should().BeTrue();
     }
+
+    [Fact]
+    public void FromError_ViaStaticAbstract_CreatesFailureOfExactType()
+    {
+        static TResult Fail<TResult>(Error error)
+            where TResult : IFailureFactory<TResult> => TResult.FromError(error);
+
+        Fail<Result<int>>(SampleError).Error.Should().Be(SampleError);
+        Fail<Result>(SampleError).IsFailure.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidationError_WithDetails_KeepsPerFieldMessages()
+    {
+        var error = Error.Validation("validation.failed", "Dữ liệu không hợp lệ.",
+            new Dictionary<string, string[]> { ["name"] = ["Không được rỗng."] });
+
+        error.Details!["name"].Should().Equal("Không được rỗng.");
+    }
+
+    [Fact]
+    public void RateLimited_HasRateLimitedKind()
+    {
+        Error.RateLimited("quota.rate_exceeded", "Vượt rate limit.").Kind.Should().Be(ErrorKind.RateLimited);
+    }
 }
