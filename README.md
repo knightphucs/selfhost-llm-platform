@@ -21,10 +21,21 @@ test suite (unit + integration Testcontainers + E2E). GĐ1 kế tiếp: Worker.H
 Yêu cầu: .NET SDK 8 (pin trong `global.json`), Docker.
 
 ```bash
+# Password Postgres: file secret, không nằm trong compose/.env (đã gitignore)
+cp deploy/.env.example deploy/.env
+mkdir -p deploy/secrets && openssl rand -base64 24 | tr -d '/+=' > deploy/secrets/postgres_password.txt
+chmod 600 deploy/secrets/postgres_password.txt
+
+# Connection string cho cả 3 host — chỉ nằm trong user-secrets, không nằm trong appsettings
+CS="Host=localhost;Port=5432;Database=selfhostllm;Username=selfhostllm;Password=$(cat deploy/secrets/postgres_password.txt)"
+for p in ControlPlane.Api Gateway Worker.Health; do
+  dotnet user-secrets set "ConnectionStrings:Postgres" "$CS" --project src/SelfHostLlm.$p
+done
+
 # Postgres 16 + pgvector
 docker compose -f deploy/docker-compose.yml up -d
 
-# Build & test
+# Build & test (test dùng Testcontainers, không cần secret)
 dotnet build
 dotnet test
 
@@ -44,13 +55,17 @@ curl localhost:5001/health/ready    # 503 nếu Postgres không kết nối đư
 # 1. Postgres + schema (migration KHÔNG tự chạy — người vận hành chạy tay)
 docker compose -f deploy/docker-compose.yml up -d
 dotnet tool restore
-dotnet tool run dotnet-ef database update -p src/SelfHostLlm.Persistence -s src/SelfHostLlm.ControlPlane.Api
+# dotnet-ef dùng DesignTimeAppDbContextFactory — nó KHÔNG đọc user-secrets, chỉ đọc biến môi trường
+ConnectionStrings__Postgres="$(dotnet user-secrets list --project src/SelfHostLlm.ControlPlane.Api \
+  | sed -n 's/^ConnectionStrings:Postgres = //p')" \
+  dotnet tool run dotnet-ef database update -p src/SelfHostLlm.Persistence -s src/SelfHostLlm.ControlPlane.Api
 
 # 2. Secret dev — không commit
 dotnet user-secrets set "Bootstrap:AdminUsername" "admin" --project src/SelfHostLlm.ControlPlane.Api
 dotnet user-secrets set "Bootstrap:AdminPassword" "<mật khẩu ≥ 10 ký tự>" --project src/SelfHostLlm.ControlPlane.Api
-dotnet user-secrets set "InternalApi:Token" "<token dài ngẫu nhiên>" --project src/SelfHostLlm.ControlPlane.Api
-dotnet user-secrets set "ControlPlane:InternalToken" "<cùng token>" --project src/SelfHostLlm.Gateway
+TOKEN=$(openssl rand -hex 32)
+dotnet user-secrets set "InternalApi:Token" "$TOKEN" --project src/SelfHostLlm.ControlPlane.Api
+dotnet user-secrets set "ControlPlane:InternalToken" "$TOKEN" --project src/SelfHostLlm.Gateway
 
 # 3. Engine + hai host (mỗi lệnh một terminal)
 ollama serve && ollama pull qwen2.5:3b
@@ -60,6 +75,9 @@ dotnet run --project src/SelfHostLlm.Gateway            # :8080 — kéo snapsho
 # 4. Kịch bản demo: cấu hình qua CP → chat qua Gateway → usage + audit
 ADMIN_PASS='<mật khẩu>' deploy/demo/smoke.sh
 ```
+
+Đổi password Postgres khi volume đã tồn tại: `POSTGRES_PASSWORD_FILE` chỉ có hiệu lực lúc khởi tạo
+volume, nên phải `ALTER USER selfhostllm PASSWORD '...'` rồi cập nhật file secret và user-secrets.
 
 CP và Gateway dùng chung key ring Data Protection (mặc định `~/Library/Application Support/SelfHostLlm/dp-keys`)
 để Gateway giải mã API key phía engine mà CP đã mã hoá.
