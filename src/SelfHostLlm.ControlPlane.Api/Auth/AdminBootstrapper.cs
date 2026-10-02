@@ -41,7 +41,11 @@ internal sealed partial class AdminBootstrapper(
 
             if (result.IsFailure)
             {
-                LogFailed(logger, result.Error!.Code, result.Error.Message);
+                // Details là mô tả lỗi của Identity ("Passwords must have...") — không chứa giá trị password.
+                var details = result.Error!.Details is { Count: > 0 } d
+                    ? string.Join("; ", d.Select(kv => $"{kv.Key}: {string.Join(" ", kv.Value)}"))
+                    : "-";
+                LogFailed(logger, result.Error.Code, result.Error.Message, details);
             }
             else if (result.Value)
             {
@@ -66,8 +70,8 @@ internal sealed partial class AdminBootstrapper(
     [LoggerMessage(Level = LogLevel.Information, Message = "Đã tạo PlatformAdmin đầu tiên: {Username}")]
     private static partial void LogCreated(ILogger logger, string username);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Bootstrap admin thất bại: {Code} — {Message}")]
-    private static partial void LogFailed(ILogger logger, string code, string message);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Bootstrap admin thất bại: {Code} — {Message} ({Details})")]
+    private static partial void LogFailed(ILogger logger, string code, string message, string details);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Bootstrap admin gặp lỗi không mong muốn")]
     private static partial void LogUnexpected(ILogger logger, Exception exception);

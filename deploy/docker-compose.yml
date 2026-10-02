@@ -1,5 +1,12 @@
 # Hạ tầng lưu trữ chạy trên Mac: PostgreSQL 16 + pgvector.
 # Chạy: docker compose -f deploy/docker-compose.yml up -d
+#
+# Password KHÔNG nằm trong file này hay trong .env: nó ở deploy/secrets/postgres_password.txt
+# (đã gitignore), mount vào container dưới dạng secret và đọc qua POSTGRES_PASSWORD_FILE.
+# Nhờ vậy `docker compose config` và `docker inspect` chỉ thấy đường dẫn, không thấy giá trị.
+# Tạo lần đầu:
+#   mkdir -p deploy/secrets && openssl rand -base64 24 | tr -d '/+=' > deploy/secrets/postgres_password.txt
+#   chmod 600 deploy/secrets/postgres_password.txt
 name: selfhostllm
 
 services:
@@ -10,7 +17,10 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-selfhostllm}
       POSTGRES_USER: ${POSTGRES_USER:-selfhostllm}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-selfhostllm_dev}
+      # Chỉ có hiệu lực lúc khởi tạo volume lần đầu. Đổi password sau đó phải ALTER USER.
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -22,6 +32,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
 
 volumes:
   pgdata:

@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- Secret dev (ConnectionStrings:Postgres) đặt bằng: dotnet user-secrets set ... -->
+    <UserSecretsId>selfhostllm-worker-health</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\SelfHostLlm.Application\SelfHostLlm.Application.csproj" />
     <ProjectReference Include="..\SelfHostLlm.Persistence\SelfHostLlm.Persistence.csproj" />

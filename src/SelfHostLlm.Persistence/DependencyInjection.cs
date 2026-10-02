@@ -21,8 +21,12 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var connectionString = configuration.GetConnectionString("Postgres")
-            ?? throw new InvalidOperationException("Thiếu cấu hình ConnectionStrings:Postgres.");
+        // Chuỗi rỗng cũng coi là thiếu — appsettings không chứa connection string, secret nằm ngoài repo.
+        var connectionString = configuration.GetConnectionString("Postgres");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Thiếu cấu hình ConnectionStrings:Postgres (dev: dotnet user-secrets; prod: biến môi trường ConnectionStrings__Postgres).");
+        }
 
         services.AddSingleton(_ => AppDbContextOptions.BuildDataSource(connectionString));
         services.AddDbContext<AppDbContext>((sp, options) =>
