@@ -34,8 +34,8 @@ public sealed class FakeEngine : IAsyncDisposable
 {
     public const string CompletionText = "Xin chào từ engine";
 
-    private static readonly string[] StreamPieces = ["Xin chào", " từ", " engine"];
-    private static readonly float[] FakeEmbedding = [0.1f, 0.2f, 0.3f];
+    private static readonly string[] _streamPieces = ["Xin chào", " từ", " engine"];
+    private static readonly float[] _fakeEmbedding = [0.1f, 0.2f, 0.3f];
 
     private readonly WebApplication _app;
 
@@ -113,7 +113,7 @@ public sealed class FakeEngine : IAsyncDisposable
         }
 
         http.Response.ContentType = "text/event-stream";
-        foreach (var piece in StreamPieces)
+        foreach (var piece in _streamPieces)
         {
             await WriteSseAsync(http, new { id = "c1", @object = "chat.completion.chunk", created = 1, model, choices = new[] { new { index = 0, delta = new { content = piece } } } });
         }
@@ -141,7 +141,7 @@ public sealed class FakeEngine : IAsyncDisposable
         {
             @object = "list",
             model = JsonNode.Parse(body)!["model"]?.GetValue<string>(),
-            data = new[] { new { @object = "embedding", index = 0, embedding = FakeEmbedding } },
+            data = new[] { new { @object = "embedding", index = 0, embedding = _fakeEmbedding } },
             usage = new { prompt_tokens = PromptTokens, total_tokens = PromptTokens },
         });
     }
